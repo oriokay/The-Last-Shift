@@ -3,91 +3,221 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Last Shift - Prototype</title>
+    <title>The Last Shift - Mega-Mart Survival</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
 
         body {
-            background: #111;
-            color: #0f0;
-            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #aaffaa;
+            font-family: 'VT323', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
+            text-shadow: 0 0 5px #00ff00;
         }
 
-        #gameCanvas {
-            border: 2px solid #0f0;
-            background: #000;
-            display: block;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid #00ff00;
+            width: 100%;
+            max-width: 1000px;
         }
 
         h1 {
-            margin-bottom: 20px;
-            text-align: center;
-            color: #0f0;
-            text-shadow: 0 0 10px #0f0;
+            font-size: 48px;
+            color: #00ff00;
+            margin-bottom: 10px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+        }
+
+        .subtitle {
+            color: #88ff88;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        #gameContainer {
+            position: relative;
+            border: 4px solid #005500;
+            border-image: linear-gradient(45deg, #005500, #00aa00, #005500) 1;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3),
+                        inset 0 0 30px rgba(0, 255, 0, 0.1);
+            background: #000;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: #000;
+        }
+
+        .scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent 50%,
+                rgba(0, 0, 0, 0.5) 50%
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            opacity: 0.3;
+            z-index: 10;
+        }
+
+        .vignette {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+            z-index: 5;
         }
 
         #ui {
             margin-top: 20px;
             width: 800px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 18px;
+            background: rgba(0, 20, 0, 0.8);
+            border: 2px solid #005500;
+            padding: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            font-size: 20px;
         }
 
-        .meter {
+        .resource-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .meter-container {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .meter-bar {
-            width: 200px;
-            height: 20px;
-            border: 1px solid #0f0;
-            background: #000;
+        .meter-label {
+            min-width: 120px;
+            color: #88ff88;
+        }
+
+        .meter {
+            flex: 1;
+            height: 24px;
+            border: 2px solid #005500;
+            background: #001100;
             position: relative;
             overflow: hidden;
         }
 
         .meter-fill {
             height: 100%;
-            background: #0f0;
-            transition: width 0.3s;
+            transition: width 0.3s ease, background 0.3s;
+        }
+
+        #sanityFill {
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+        }
+
+        #storeFill {
+            background: linear-gradient(90deg, #00ff00, #ff8800, #880000);
+        }
+
+        .meter-value {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-weight: bold;
+            text-shadow: 0 0 3px #000;
+        }
+
+        #infoPanel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         #timeDisplay {
-            font-size: 20px;
-            font-weight: bold;
-            padding: 10px;
-            border: 1px solid #0f0;
-            background: rgba(0, 0, 0, 0.8);
+            font-size: 28px;
+            color: #00ffff;
+            text-align: center;
+            padding: 5px;
+            background: rgba(0, 40, 40, 0.8);
+            border: 1px solid #008888;
+        }
+
+        #objectiveDisplay {
+            font-size: 16px;
+            color: #ffff88;
+            min-height: 40px;
+            padding: 5px;
+            background: rgba(40, 40, 0, 0.8);
+            border: 1px solid #888800;
+        }
+
+        #paDisplay {
+            font-size: 14px;
+            color: #ff8888;
+            min-height: 40px;
+            padding: 5px;
+            background: rgba(40, 0, 0, 0.8);
+            border: 1px solid #880000;
+            font-style: italic;
         }
 
         #controls {
             margin-top: 20px;
-            color: #0af;
-            font-size: 14px;
-            text-align: center;
-            line-height: 1.5;
+            width: 800px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 16px;
+            color: #88aaff;
+        }
+
+        .control-group {
+            background: rgba(0, 0, 40, 0.8);
+            padding: 10px;
+            border: 1px solid #0000aa;
+        }
+
+        .control-title {
+            color: #aaaaff;
+            margin-bottom: 5px;
+            border-bottom: 1px solid #0000aa;
+            padding-bottom: 3px;
         }
 
         #debug {
             margin-top: 10px;
-            color: #ff0;
-            font-size: 12px;
+            color: #ffff00;
+            font-size: 14px;
             min-height: 20px;
+            font-family: monospace;
         }
 
         #loading {
@@ -95,41 +225,129 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: #0f0;
-            font-size: 24px;
+            color: #00ff00;
+            font-size: 32px;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .glitch {
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        .flicker {
+            animation: flicker 2s infinite;
+        }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+            51% { opacity: 0.2; }
+            52% { opacity: 0.8; }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
     </style>
 </head>
 <body>
-    <h1>THE LAST SHIFT - PROTOTYPE</h1>
-    <div id="loading">Loading game...</div>
+    <div class="header">
+        <h1 class="glitch">THE LAST SHIFT</h1>
+        <div class="subtitle">Mega-Mart Night Survival Horror</div>
+        <div>Shift #001 | Employee ID: #731-66</div>
+    </div>
     
-    <div id="timeDisplay">SHIFT: 10:00 PM</div>
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <div id="loading">LOADING MEGA-MART SYSTEMS...</div>
+    
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="scanlines"></div>
+        <div class="vignette"></div>
+    </div>
     
     <div id="ui">
-        <div class="meter">
-            <span>SANITY:</span>
-            <div class="meter-bar">
-                <div id="sanityBar" class="meter-fill" style="width: 100%"></div>
+        <div class="resource-panel">
+            <div class="meter-container">
+                <div class="meter-label">SANITY</div>
+                <div class="meter">
+                    <div id="sanityFill" class="meter-fill" style="width: 100%"></div>
+                    <div id="sanityValue" class="meter-value">100%</div>
+                </div>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">BATTERY</div>
+                <div class="meter">
+                    <div id="batteryFill" class="meter-fill" style="width: 100%"></div>
+                    <div id="batteryValue" class="meter-value">100%</div>
+                </div>
+            </div>
+            <div class="meter-container">
+                <div class="meter-label">STORE INTEGRITY</div>
+                <div class="meter">
+                    <div id="storeFill" class="meter-fill" style="width: 100%"></div>
+                    <div id="storeValue" class="meter-value">100%</div>
+                </div>
             </div>
         </div>
         
-        <div class="meter">
-            <span>STORE:</span>
-            <div class="meter-bar">
-                <div id="storeBar" class="meter-fill" style="width: 100%"></div>
-            </div>
+        <div id="infoPanel">
+            <div id="timeDisplay" class="flicker">SHIFT: 10:00 PM</div>
+            <div id="objectiveDisplay">Current Directive: Survive until 6:00 AM</div>
+            <div id="paDisplay">PA: Welcome to Mega-Mart. Have a productive shift.</div>
         </div>
     </div>
     
     <div id="controls">
-        WASD to move | SPACE to interact/throw | F for flashlight | L to lock doors | R to reset
+        <div class="control-group">
+            <div class="control-title">MOVEMENT</div>
+            <div>WASD / Arrows: Move</div>
+            <div>Shift: Run (drains sanity)</div>
+            <div>Space: Interact/Use</div>
+        </div>
+        
+        <div class="control-group">
+            <div class="control-title">TOOLS</div>
+            <div>F: Flashlight On/Off</div>
+            <div>Q: Previous Tool</div>
+            <div>E: Next Tool</div>
+            <div>R: Use Selected Tool</div>
+        </div>
+        
+        <div class="control-group">
+            <div class="control-title">ACTIONS</div>
+            <div>L: Lock/Barricade</div>
+            <div>C: Clean Area</div>
+            <div>P: PA Announcement</div>
+            <div>M: Map/Objectives</div>
+        </div>
     </div>
     
-    <div id="debug">Initializing...</div>
+    <div id="debug">SYSTEMS NOMINAL | SHIFT ACTIVE</div>
 
-    <!-- Load the JavaScript -->
+    <!-- Load JavaScript modules -->
+    <script src="js/map.js"></script>
+    <script src="js/entities.js"></script>
+    <script src="js/items.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/pa.js"></script>
+    <script src="js/audio.js"></script>
+    <script src="js/game.js"></script>
     <script src="js/main.js"></script>
 </body>
 </html>
