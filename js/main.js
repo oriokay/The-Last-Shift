@@ -3,13 +3,14 @@ const GameState = {
     player: null,
     entities: [],
     items: [],
-    time: 22.0, // 10:00 PM in decimal (22.0 = 10:00 PM)
+    time: 22.0, // 10:00 PM in decimal
     shiftEnd: 6.0, // 6:00 AM
     sanity: 100,
     storeIntegrity: 100,
     isFlashlightOn: true,
     gameOver: false,
-    debugMode: true
+    debugMode: true,
+    keys: {}
 };
 
 // ==================== PLAYER CLASS ====================
@@ -21,27 +22,24 @@ class Player {
         this.height = 20;
         this.speed = 3;
         this.inventory = [];
-        this.selectedItem = 0;
         this.flashlightBattery = 100;
         this.lastSanityDrain = 0;
     }
 
-    move(keys) {
+    move() {
         let dx = 0, dy = 0;
         
-        if (keys['w'] || keys['ArrowUp']) dy -= this.speed;
-        if (keys['s'] || keys['ArrowDown']) dy += this.speed;
-        if (keys['a'] || keys['ArrowLeft']) dx -= this.speed;
-        if (keys['d'] || keys['ArrowRight']) dx += this.speed;
+        if (GameState.keys['w'] || GameState.keys['arrowup']) dy -= this.speed;
+        if (GameState.keys['s'] || GameState.keys['arrowdown']) dy += this.speed;
+        if (GameState.keys['a'] || GameState.keys['arrowleft']) dx -= this.speed;
+        if (GameState.keys['d'] || GameState.keys['arrowright']) dx += this.speed;
         
-        // Simple collision with walls (store boundaries)
         const newX = this.x + dx;
         const newY = this.y + dy;
         
         if (newX > 0 && newX < 780) this.x = newX;
         if (newY > 0 && newY < 580) this.y = newY;
         
-        // Drain flashlight battery
         if (GameState.isFlashlightOn && this.flashlightBattery > 0) {
             this.flashlightBattery -= 0.02;
             if (this.flashlightBattery < 0) {
@@ -52,9 +50,8 @@ class Player {
     }
 
     updateSanity() {
-        // Drain sanity if in dark areas
         const now = Date.now();
-        if (now - this.lastSanityDrain > 1000) { // Every second
+        if (now - this.lastSanityDrain > 1000) {
             if (!GameState.isFlashlightOn && GameState.sanity > 0) {
                 GameState.sanity -= 2;
                 if (GameState.sanity < 0) GameState.sanity = 0;
@@ -62,10 +59,9 @@ class Player {
             this.lastSanityDrain = now;
         }
         
-        // Game over if sanity reaches 0
         if (GameState.sanity <= 0 && !GameState.gameOver) {
             GameState.gameOver = true;
-            alert("GAME OVER: You've lost your mind. The store consumes you.\n\nRefresh to try again.");
+            alert("GAME OVER: You've lost your mind.\n\nRefresh to try again.");
         }
     }
 }
@@ -79,58 +75,52 @@ class Entity {
         this.width = 20;
         this.height = 20;
         this.speed = 1;
-        this.state = 'wandering'; // wandering, chasing, shopping
-        this.targetItem = null;
-        this.basket = [];
+        this.state = 'wandering';
+        this.vx = 0;
+        this.vy = 0;
+        
+        if (!this.vx) {
+            const angle = Math.random() * Math.PI * 2;
+            this.vx = Math.cos(angle) * this.speed;
+            this.vy = Math.sin(angle) * this.speed;
+        }
     }
 
     update(player) {
-        switch(this.type) {
-            case 'gatherer':
-                this.updateGatherer(player);
-                break;
-            case 'tapper':
-                this.updateTapper(player);
-                break;
+        if (this.type === 'gatherer') {
+            this.updateGatherer(player);
+        } else if (this.type === 'tapper') {
+            this.updateTapper();
         }
     }
 
     updateGatherer(player) {
-        // Simple wandering AI
         if (Math.random() < 0.02) {
             this.speed = 0.5 + Math.random() * 1.5;
         }
         
-        // Occasionally change direction
         if (Math.random() < 0.05) {
             const angle = Math.random() * Math.PI * 2;
             this.vx = Math.cos(angle) * this.speed;
             this.vy = Math.sin(angle) * this.speed;
         }
         
-        // Move
-        if (this.vx && this.vy) {
-            this.x += this.vx;
-            this.y += this.vy;
-            
-            // Boundary check
-            this.x = Math.max(20, Math.min(780, this.x));
-            this.y = Math.max(20, Math.min(580, this.y));
-        }
+        this.x += this.vx;
+        this.y += this.vy;
         
-        // Check distance to player
+        this.x = Math.max(20, Math.min(780, this.x));
+        this.y = Math.max(20, Math.min(580, this.y));
+        
         const distToPlayer = Math.sqrt(
             Math.pow(this.x - player.x, 2) + 
             Math.pow(this.y - player.y, 2)
         );
         
-        // Become aggressive if too close to player
         if (distToPlayer < 60 && this.state !== 'chasing') {
             this.state = 'chasing';
             this.speed = 2.5;
         }
         
-        // Chase player if aggressive
         if (this.state === 'chasing' && distToPlayer > 30) {
             const angle = Math.atan2(player.y - this.y, player.x - this.x);
             this.x += Math.cos(angle) * this.speed;
@@ -138,8 +128,7 @@ class Entity {
         }
     }
 
-    updateTapper(player) {
-        // Tappers stay near windows (edges)
+    updateTapper() {
         if (!this.vx || !this.vy) {
             this.vx = 0;
             this.vy = 0.5;
@@ -147,7 +136,6 @@ class Entity {
         
         this.y += this.vy;
         
-        // Bounce at edges
         if (this.y < 50 || this.y > 550) {
             this.vy *= -1;
         }
@@ -166,7 +154,6 @@ class Item {
         this.vx = 0;
         this.vy = 0;
         
-        // Define item properties
         this.properties = {
             'soda': { color: '#ff5555', name: 'Sparkle-Cola', sanityRestore: 30 },
             'battery': { color: '#ffff55', name: 'Battery', flashlightRestore: 50 },
@@ -179,7 +166,6 @@ class Item {
             this.x += this.vx;
             this.y += this.vy;
             
-            // Slow down
             this.vx *= 0.95;
             this.vy *= 0.95;
             
@@ -189,10 +175,9 @@ class Item {
     }
 }
 
-// ==================== STORE GENERATION ====================
+// ==================== GAME FUNCTIONS ====================
 function generateStore() {
-    // Create items
-    for (let i = 0; i < 15; i++) {
+    for (let i = 0; i < 10; i++) {
         GameState.items.push(new Item(
             Math.random() * 700 + 50,
             Math.random() * 500 + 50,
@@ -200,78 +185,13 @@ function generateStore() {
         ));
     }
     
-    // Create entities
     GameState.entities.push(new Entity(100, 100, 'gatherer'));
     GameState.entities.push(new Entity(700, 300, 'gatherer'));
     GameState.entities.push(new Entity(50, 200, 'tapper'));
     
-    // Initialize player
     GameState.player = new Player(400, 300);
 }
 
-// ==================== INPUT HANDLING ====================
-const keys = {};
-
-window.addEventListener('keydown', (e) => {
-    keys[e.key.toLowerCase()] = true;
-    
-    // Handle specific keys
-    switch(e.key.toLowerCase()) {
-        case 'f':
-            GameState.isFlashlightOn = !GameState.isFlashlightOn && GameState.player.flashlightBattery > 0;
-            break;
-            
-        case ' ':
-            // Pick up nearest item
-            let nearestItem = null;
-            let nearestDist = 50; // Pickup radius
-            
-            for (const item of GameState.items) {
-                if (item.collected) continue;
-                
-                const dist = Math.sqrt(
-                    Math.pow(item.x - GameState.player.x, 2) + 
-                    Math.pow(item.y - GameState.player.y, 2)
-                );
-                
-                if (dist < nearestDist) {
-                    nearestDist = dist;
-                    nearestItem = item;
-                }
-            }
-            
-            if (nearestItem) {
-                nearestItem.collected = true;
-                GameState.player.inventory.push(nearestItem);
-                updateDebug(`Picked up: ${nearestItem.properties[nearestItem.type].name}`);
-                
-                // Use item immediately for simplicity
-                useItem(nearestItem);
-            }
-            break;
-            
-        case 'l':
-            // "Lock" doors - repair store integrity slightly
-            if (GameState.storeIntegrity < 100) {
-                GameState.storeIntegrity = Math.min(100, GameState.storeIntegrity + 5);
-                updateDebug("Door secured. Store integrity +5%");
-            }
-            break;
-            
-        case 'r':
-            // Reset game (for debugging)
-            if (GameState.debugMode) {
-                document.location.reload();
-            }
-            break;
-    }
-});
-
-window.addEventListener('keyup', (e) => {
-    keys[e.key.toLowerCase()] = false;
-});
-
-// ==================== ITEM USAGE ====================
 function useItem(item) {
     const props = item.properties[item.type];
     
@@ -292,77 +212,17 @@ function useItem(item) {
             break;
     }
     
-    // Remove from inventory
     const index = GameState.player.inventory.indexOf(item);
     if (index > -1) {
         GameState.player.inventory.splice(index, 1);
     }
 }
 
-// ==================== GAME LOOP ====================
-function gameLoop() {
-    if (GameState.gameOver) return;
-    
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Update game time
-    GameState.time += 0.001; // Fast-forward for demo
-    if (GameState.time >= 24) GameState.time = 0;
-    
-    // Update UI
-    updateUI();
-    
-    // Update player
-    if (GameState.player) {
-        GameState.player.move(keys);
-        GameState.player.updateSanity();
-        
-        // Random store integrity drain
-        if (Math.random() < 0.005 && GameState.storeIntegrity > 0) {
-            GameState.storeIntegrity -= 1;
-        }
-    }
-    
-    // Update entities
-    for (const entity of GameState.entities) {
-        if (GameState.player) entity.update(GameState.player);
-    }
-    
-    // Update items
-    for (const item of GameState.items) {
-        item.update();
-    }
-    
-    // Draw everything
-    drawStore(ctx);
-    drawItems(ctx);
-    drawEntities(ctx);
-    if (GameState.player) drawPlayer(ctx);
-    drawFlashlight(ctx);
-    
-    // Check win condition
-    if (GameState.time >= GameState.shiftEnd && GameState.time < 6.1) {
-        GameState.gameOver = true;
-        alert("SHIFT COMPLETE!\n\nYou survived the night. The fog lifts... for now.\n\nYour final stats:\nSanity: " + 
-              Math.floor(GameState.sanity) + "%\nStore Integrity: " + 
-              Math.floor(GameState.storeIntegrity) + "%\n\nRefresh to work another shift.");
-    }
-    
-    requestAnimationFrame(gameLoop);
-}
-
 // ==================== DRAWING FUNCTIONS ====================
 function drawStore(ctx) {
-    // Draw floor
-    ctx.fillStyle = '#222244';
+    ctx.fillStyle = '#111133';
     ctx.fillRect(0, 0, 800, 600);
     
-    // Draw grid lines (store aisles)
     ctx.strokeStyle = '#333366';
     ctx.lineWidth = 2;
     
@@ -373,12 +233,10 @@ function drawStore(ctx) {
         ctx.stroke();
     }
     
-    // Draw windows (edges)
     ctx.strokeStyle = '#5555ff';
     ctx.lineWidth = 3;
     ctx.strokeRect(0, 0, 800, 600);
     
-    // Draw store integrity cracks
     if (GameState.storeIntegrity < 50) {
         ctx.strokeStyle = '#ff0000';
         ctx.lineWidth = 1;
@@ -399,16 +257,13 @@ function drawStore(ctx) {
 function drawPlayer(ctx) {
     const p = GameState.player;
     
-    // Player body
     ctx.fillStyle = GameState.sanity > 30 ? '#00aaff' : '#ff5500';
     ctx.fillRect(p.x - p.width/2, p.y - p.height/2, p.width, p.height);
     
-    // Player face (indicates direction)
     ctx.fillStyle = '#ffffff';
     const faceOffset = 5;
     ctx.fillRect(p.x + faceOffset - p.width/2, p.y - 3, 4, 6);
     
-    // Flashlight indicator
     if (GameState.isFlashlightOn) {
         ctx.fillStyle = '#ffff00';
         ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
@@ -417,18 +272,12 @@ function drawPlayer(ctx) {
 
 function drawEntities(ctx) {
     for (const entity of GameState.entities) {
-        switch(entity.type) {
-            case 'gatherer':
-                ctx.fillStyle = entity.state === 'chasing' ? '#ff0000' : '#880088';
-                break;
-            case 'tapper':
-                ctx.fillStyle = '#008888';
-                break;
-        }
+        ctx.fillStyle = entity.type === 'gatherer' 
+            ? (entity.state === 'chasing' ? '#ff0000' : '#880088')
+            : '#008888';
         
         ctx.fillRect(entity.x - entity.width/2, entity.y - entity.height/2, entity.width, entity.height);
         
-        // Draw basket for gatherers
         if (entity.type === 'gatherer') {
             ctx.fillStyle = '#886600';
             ctx.fillRect(entity.x + 10, entity.y - 5, 8, 10);
@@ -444,7 +293,6 @@ function drawItems(ctx) {
         ctx.fillStyle = props.color;
         ctx.fillRect(item.x - item.width/2, item.y - item.height/2, item.width, item.height);
         
-        // Draw a slight glow
         ctx.shadowColor = props.color;
         ctx.shadowBlur = 10;
         ctx.fillRect(item.x - item.width/2, item.y - item.height/2, item.width, item.height);
@@ -456,22 +304,19 @@ function drawFlashlight(ctx) {
     if (!GameState.isFlashlightOn || !GameState.player) return;
     
     const p = GameState.player;
+    const alpha = GameState.player.flashlightBattery / 100;
     
-    // Create flashlight cone (gradient)
     const gradient = ctx.createRadialGradient(
         p.x, p.y, 10,
         p.x, p.y, 150
     );
     
-    // Adjust based on battery
-    const alpha = GameState.player.flashlightBattery / 100;
     gradient.addColorStop(0, `rgba(255, 255, 200, ${0.3 * alpha})`);
     gradient.addColorStop(0.5, `rgba(255, 255, 150, ${0.1 * alpha})`);
     gradient.addColorStop(1, 'rgba(255, 255, 100, 0)');
     
     ctx.fillStyle = gradient;
     ctx.beginPath();
-    // Simple cone facing right (for demo)
     ctx.moveTo(p.x, p.y);
     ctx.arc(p.x, p.y, 150, -Math.PI/4, Math.PI/4);
     ctx.closePath();
@@ -480,45 +325,163 @@ function drawFlashlight(ctx) {
 
 // ==================== UI FUNCTIONS ====================
 function updateUI() {
-    // Update sanity bar
-    document.getElementById('sanityBar').style.width = GameState.sanity + '%';
-    document.getElementById('sanityBar').style.background = 
-        GameState.sanity > 50 ? '#0f0' : 
-        GameState.sanity > 20 ? '#ff0' : '#f00';
+    const sanityBar = document.getElementById('sanityBar');
+    const storeBar = document.getElementById('storeBar');
+    const timeDisplay = document.getElementById('timeDisplay');
     
-    // Update store integrity bar
-    document.getElementById('storeBar').style.width = GameState.storeIntegrity + '%';
-    document.getElementById('storeBar').style.background = 
-        GameState.storeIntegrity > 60 ? '#0f0' : 
-        GameState.storeIntegrity > 30 ? '#ff0' : '#f00';
+    if (sanityBar) {
+        sanityBar.style.width = GameState.sanity + '%';
+        sanityBar.style.background = 
+            GameState.sanity > 50 ? '#0f0' : 
+            GameState.sanity > 20 ? '#ff0' : '#f00';
+    }
     
-    // Update time display
-    const hours = Math.floor(GameState.time);
-    const minutes = Math.floor((GameState.time - hours) * 60);
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const displayHour = hours > 12 ? hours - 12 : hours;
-    document.getElementById('timeDisplay').textContent = 
-        `SHIFT: ${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+    if (storeBar) {
+        storeBar.style.width = GameState.storeIntegrity + '%';
+        storeBar.style.background = 
+            GameState.storeIntegrity > 60 ? '#0f0' : 
+            GameState.storeIntegrity > 30 ? '#ff0' : '#f00';
+    }
     
-    // Update debug info
-    if (GameState.debugMode) {
-        const p = GameState.player;
-        updateDebug(
-            `Pos: (${Math.floor(p.x)}, ${Math.floor(p.y)}) | ` +
-            `Battery: ${Math.floor(p.flashlightBattery)}% | ` +
-            `Inventory: ${p.inventory.length} items | ` +
-            `Entities: ${GameState.entities.length}`
-        );
+    if (timeDisplay) {
+        const hours = Math.floor(GameState.time);
+        const minutes = Math.floor((GameState.time - hours) * 60);
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        const displayHour = hours > 12 ? hours - 12 : hours;
+        timeDisplay.textContent = 
+            `SHIFT: ${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
     }
 }
 
 function updateDebug(text) {
-    document.getElementById('debug').textContent = `DEBUG: ${text}`;
+    const debug = document.getElementById('debug');
+    if (debug) {
+        debug.textContent = `DEBUG: ${text}`;
+    }
+}
+
+// ==================== INPUT HANDLING ====================
+window.addEventListener('keydown', (e) => {
+    GameState.keys[e.key.toLowerCase()] = true;
+    
+    switch(e.key.toLowerCase()) {
+        case 'f':
+            GameState.isFlashlightOn = !GameState.isFlashlightOn && GameState.player.flashlightBattery > 0;
+            break;
+            
+        case ' ':
+            if (!GameState.player) return;
+            
+            let nearestItem = null;
+            let nearestDist = 50;
+            
+            for (const item of GameState.items) {
+                if (item.collected) continue;
+                
+                const dist = Math.sqrt(
+                    Math.pow(item.x - GameState.player.x, 2) + 
+                    Math.pow(item.y - GameState.player.y, 2)
+                );
+                
+                if (dist < nearestDist) {
+                    nearestDist = dist;
+                    nearestItem = item;
+                }
+            }
+            
+            if (nearestItem) {
+                nearestItem.collected = true;
+                GameState.player.inventory.push(nearestItem);
+                updateDebug(`Picked up: ${nearestItem.properties[nearestItem.type].name}`);
+                useItem(nearestItem);
+            }
+            break;
+            
+        case 'l':
+            if (GameState.storeIntegrity < 100) {
+                GameState.storeIntegrity = Math.min(100, GameState.storeIntegrity + 5);
+                updateDebug("Door secured. Store integrity +5%");
+            }
+            break;
+            
+        case 'r':
+            document.location.reload();
+            break;
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    GameState.keys[e.key.toLowerCase()] = false;
+});
+
+// ==================== GAME LOOP ====================
+function gameLoop() {
+    if (GameState.gameOver) return;
+    
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    GameState.time += 0.001;
+    if (GameState.time >= 24) GameState.time = 0;
+    
+    updateUI();
+    
+    if (GameState.player) {
+        GameState.player.move();
+        GameState.player.updateSanity();
+        
+        if (Math.random() < 0.005 && GameState.storeIntegrity > 0) {
+            GameState.storeIntegrity -= 1;
+        }
+    }
+    
+    for (const entity of GameState.entities) {
+        if (GameState.player) entity.update(GameState.player);
+    }
+    
+    for (const item of GameState.items) {
+        item.update();
+    }
+    
+    drawStore(ctx);
+    drawItems(ctx);
+    drawEntities(ctx);
+    if (GameState.player) drawPlayer(ctx);
+    drawFlashlight(ctx);
+    
+    if (GameState.time >= GameState.shiftEnd && GameState.time < 6.1) {
+        GameState.gameOver = true;
+        alert("SHIFT COMPLETE!\n\nYou survived the night!\n\nFinal stats:\nSanity: " + 
+              Math.floor(GameState.sanity) + "%\nStore: " + 
+              Math.floor(GameState.storeIntegrity) + "%");
+    }
+    
+    requestAnimationFrame(gameLoop);
 }
 
 // ==================== INITIALIZATION ====================
-window.onload = function() {
+window.addEventListener('DOMContentLoaded', () => {
+    console.log("The Last Shift - Initializing...");
+    
+    const loading = document.getElementById('loading');
+    if (loading) {
+        loading.style.display = 'none';
+    }
+    
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) {
+        console.error("Canvas element not found!");
+        return;
+    }
+    
     generateStore();
-    updateDebug("Game started! Collect items (SPACE), use flashlight (F), secure doors (L)");
+    updateDebug("Game started! Collect items (SPACE), use flashlight (F)");
+    
     gameLoop();
-};
+    console.log("Game loop started successfully!");
+});
