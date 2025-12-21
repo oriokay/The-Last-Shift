@@ -5,37 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Last Shift - Prototype</title>
     <style>
-        body {
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
             background: #111;
+            color: #0f0;
+            font-family: 'Courier New', monospace;
             display: flex;
             flex-direction: column;
             align-items: center;
-            font-family: 'Courier New', monospace;
-            color: #0f0;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
         }
-        
+
         #gameCanvas {
             border: 2px solid #0f0;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
             background: #000;
+            display: block;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
         }
-        
+
+        h1 {
+            margin-bottom: 20px;
+            text-align: center;
+            color: #0f0;
+            text-shadow: 0 0 10px #0f0;
+        }
+
         #ui {
             margin-top: 20px;
             width: 800px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 18px;
         }
-        
+
         .meter {
             display: flex;
             align-items: center;
             gap: 10px;
         }
-        
+
         .meter-bar {
             width: 200px;
             height: 20px;
@@ -44,35 +60,51 @@
             position: relative;
             overflow: hidden;
         }
-        
+
         .meter-fill {
             height: 100%;
             background: #0f0;
             transition: width 0.3s;
         }
-        
+
         #timeDisplay {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
-            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #0f0;
+            background: rgba(0, 0, 0, 0.8);
         }
-        
+
         #controls {
             margin-top: 20px;
-            color: #888;
+            color: #0af;
             font-size: 14px;
+            text-align: center;
+            line-height: 1.5;
         }
-        
+
         #debug {
             margin-top: 10px;
             color: #ff0;
             font-size: 12px;
+            min-height: 20px;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-size: 24px;
         }
     </style>
 </head>
 <body>
     <h1>THE LAST SHIFT - PROTOTYPE</h1>
-    <div id="timeDisplay">SHIFT START: 10:00 PM</div>
+    <div id="loading">Loading game...</div>
+    
+    <div id="timeDisplay">SHIFT: 10:00 PM</div>
     <canvas id="gameCanvas" width="800" height="600"></canvas>
     
     <div id="ui">
@@ -92,11 +124,12 @@
     </div>
     
     <div id="controls">
-        WASD to move | SPACE to interact/throw | F for flashlight | L to lock doors
+        WASD to move | SPACE to interact/throw | F for flashlight | L to lock doors | R to reset
     </div>
     
-    <div id="debug"></div>
+    <div id="debug">Initializing...</div>
 
-     <script src="js/game.js"></script>
+    <!-- Load the JavaScript -->
+    <script src="js/main.js"></script>
 </body>
 </html>
