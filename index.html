@@ -1038,4 +1038,492 @@
             updatePADisplay(`PA: ${message}`);
             
             // Attracts nearby entities
-            gameState.entities.forEach(entity =>
+            gameState.entities.forEach(entity => {
+                const dist = Math.sqrt(
+                    Math.pow(entity.x - gameState.player.x, 2) +
+                    Math.pow(entity.y - gameState.player.y, 2)
+                );
+                if (dist < 300) {
+                    entity.dir = Math.atan2(
+                        gameState.player.y - entity.y,
+                        gameState.player.x - entity.x
+                    );
+                    entity.speed = 1;
+                }
+            });
+        }
+
+        // ==================== DRAWING ====================
+        function drawGame(ctx) {
+            // Clear canvas
+            ctx.fillStyle = '#111122';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Draw detailed store environment
+            drawStoreEnvironment(ctx);
+            
+            // Draw items
+            drawItems(ctx);
+            
+            // Draw spills (tasks)
+            drawSpills(ctx);
+            
+            // Draw entities
+            drawEntities(ctx);
+            
+            // Draw player
+            drawPlayer(ctx);
+            
+            // Draw lighting effects
+            drawLighting(ctx);
+            
+            // Draw HUD elements
+            drawHUD(ctx);
+        }
+
+        function drawStoreEnvironment(ctx) {
+            // Floor with tile pattern
+            ctx.fillStyle = '#223344';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Draw tile grid
+            ctx.strokeStyle = '#334455';
+            ctx.lineWidth = 1;
+            
+            for (let x = 0; x < 800; x += 40) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 600);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < 600; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(800, y);
+                ctx.stroke();
+            }
+            
+            // Draw aisles with shelves
+            AISLE_INFO.forEach(aisle => {
+                // Aisle floor (lighter)
+                ctx.fillStyle = '#334466';
+                ctx.fillRect(aisle.x, 100, aisle.width, 400);
+                
+                // Shelves (brown)
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(aisle.x, 100, aisle.width, 20); // Top shelf
+                ctx.fillRect(aisle.x, 480, aisle.width, 20); // Bottom shelf
+                
+                // Shelf details
+                ctx.fillStyle = '#a0522d';
+                for (let y = 120; y < 480; y += 40) {
+                    ctx.fillRect(aisle.x, y, aisle.width, 4); // Shelves
+                }
+                
+                // Aisle number sign
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 16px VT323';
+                ctx.fillText(`AISLE ${aisle.number}`, aisle.x + 10, 70);
+                ctx.fillText(aisle.name, aisle.x + 10, 90);
+            });
+            
+            // Draw checkout counters
+            ctx.fillStyle = '#666666';
+            ctx.fillRect(50, 500, 700, 30);
+            ctx.fillStyle = '#888888';
+            for (let x = 100; x < 700; x += 150) {
+                ctx.fillRect(x, 505, 80, 20); // Individual registers
+            }
+            
+            // Draw break room
+            ctx.fillStyle = '#555555';
+            ctx.fillRect(650, 50, 120, 80);
+            ctx.fillStyle = '#777777';
+            ctx.fillRect(660, 60, 40, 20); // Table
+            ctx.fillRect(720, 60, 40, 60); // Vending machine
+            
+            // Draw freezer section
+            ctx.fillStyle = '#aaccff';
+            ctx.fillRect(50, 100, 40, 300);
+            ctx.fillStyle = '#88aaff';
+            ctx.fillRect(52, 102, 36, 296); // Inner freezer
+            
+            // Draw windows
+            ctx.fillStyle = '#334477';
+            ctx.fillRect(0, 0, 800, 10); // Top wall
+            ctx.fillRect(0, 590, 800, 10); // Bottom wall
+            ctx.fillRect(0, 0, 10, 600); // Left wall
+            ctx.fillRect(790, 0, 10, 600); // Right wall
+            
+            // Window details
+            ctx.fillStyle = '#88aaff';
+            for (let y = 150; y < 550; y += 100) {
+                ctx.fillRect(5, y, 5, 40); // Left windows
+                ctx.fillRect(790, y, 5, 40); // Right windows
+            }
+            
+            // Store lights
+            ctx.fillStyle = '#ffffaa';
+            for (let x = 75; x < 800; x += 150) {
+                for (let y = 75; y < 600; y += 150) {
+                    if (Math.random() > 0.05) { // 95% chance to be on
+                        ctx.beginPath();
+                        ctx.arc(x, y, 10, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // Light glow
+                        const gradient = ctx.createRadialGradient(x, y, 5, x, y, 30);
+                        gradient.addColorStop(0, 'rgba(255, 255, 170, 0.8)');
+                        gradient.addColorStop(1, 'rgba(255, 255, 170, 0)');
+                        
+                        ctx.fillStyle = gradient;
+                        ctx.beginPath();
+                        ctx.arc(x, y, 30, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#ffffaa';
+                    }
+                }
+            }
+        }
+
+        function drawItems(ctx) {
+            gameState.items.forEach(item => {
+                if (!item.collected) {
+                    switch(item.type) {
+                        case 'battery':
+                            ctx.fillStyle = '#ffff00';
+                            ctx.fillRect(item.x - 5, item.y - 8, 10, 16);
+                            ctx.fillStyle = '#ffaa00';
+                            ctx.fillRect(item.x - 3, item.y - 6, 6, 12);
+                            break;
+                        case 'soda':
+                            ctx.fillStyle = '#ff5555';
+                            ctx.fillRect(item.x - 6, item.y - 10, 12, 20);
+                            ctx.fillStyle = '#ff0000';
+                            ctx.fillRect(item.x - 4, item.y - 8, 8, 4);
+                            break;
+                        case 'tape':
+                            ctx.fillStyle = '#888888';
+                            ctx.fillRect(item.x - 7, item.y - 4, 14, 8);
+                            ctx.fillStyle = '#666666';
+                            ctx.fillRect(item.x - 5, item.y - 2, 10, 4);
+                            break;
+                        case 'scanner':
+                            ctx.fillStyle = '#333333';
+                            ctx.fillRect(item.x - 6, item.y - 8, 12, 16);
+                            ctx.fillStyle = '#00ff00';
+                            ctx.fillRect(item.x - 4, item.y - 6, 8, 12);
+                            break;
+                    }
+                    
+                    // Sparkle effect
+                    if (Math.random() > 0.7) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath();
+                        ctx.arc(item.x, item.y - 12, 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            });
+        }
+
+        function drawSpills(ctx) {
+            Object.values(gameState.aisleSpills).forEach(spill => {
+                if (spill.active && !spill.cleaned) {
+                    // Animated spill effect
+                    const pulse = Math.sin(Date.now() / 500) * 0.3 + 0.7;
+                    
+                    // Spill puddle
+                    ctx.fillStyle = `rgba(255, 0, 0, ${0.5 * pulse})`;
+                    ctx.beginPath();
+                    ctx.arc(spill.x, spill.y, 20, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Spill outline
+                    ctx.strokeStyle = '#ff0000';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(spill.x, spill.y, 22, 0, Math.PI * 2);
+                    ctx.stroke();
+                    
+                    // Clean here indicator
+                    ctx.fillStyle = '#ffff00';
+                    ctx.font = 'bold 14px VT323';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('CLEAN HERE', spill.x, spill.y - 30);
+                }
+            });
+        }
+
+        function drawEntities(ctx) {
+            gameState.entities.forEach(entity => {
+                if (entity.type === 'gatherer') {
+                    // Body (purple uniform)
+                    ctx.fillStyle = entity.state === 'fleeing' ? '#ff5555' : '#8b46c7';
+                    ctx.fillRect(entity.x - 8, entity.y - 12, 16, 24);
+                    
+                    // Head
+                    ctx.fillStyle = '#663399';
+                    ctx.fillRect(entity.x - 4, entity.y - 16, 8, 8);
+                    
+                    // Shopping basket
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(entity.x + 6, entity.y - 8, 6, 10);
+                    
+                    // Movement indicator
+                    if (entity.state === 'fleeing') {
+                        ctx.strokeStyle = '#ff0000';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(entity.x, entity.y);
+                        ctx.lineTo(
+                            entity.x + Math.cos(entity.dir) * 20,
+                            entity.y + Math.sin(entity.dir) * 20
+                        );
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        function drawPlayer(ctx) {
+            // Player body (blue uniform)
+            ctx.fillStyle = '#6b8cff';
+            ctx.fillRect(gameState.player.x - 8, gameState.player.y - 12, 16, 24);
+            
+            // Player head
+            ctx.fillStyle = '#ffcc99';
+            ctx.fillRect(gameState.player.x - 4, gameState.player.y - 16, 8, 8);
+            
+            // Direction indicator
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const dirX = gameState.player.x + Math.cos(gameState.player.dir) * 15;
+            const dirY = gameState.player.y + Math.sin(gameState.player.dir) * 15;
+            ctx.moveTo(gameState.player.x, gameState.player.y);
+            ctx.lineTo(dirX, dirY);
+            ctx.stroke();
+            
+            // Inventory indicator
+            if (gameState.player.inventory.length > 0) {
+                ctx.fillStyle = '#ffff00';
+                ctx.beginPath();
+                ctx.arc(gameState.player.x, gameState.player.y - 20, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawLighting(ctx) {
+            // Flashlight effect
+            if (gameState.flashlightOn && gameState.battery > 0) {
+                const gradient = ctx.createRadialGradient(
+                    gameState.player.x, gameState.player.y, 10,
+                    gameState.player.x, gameState.player.y, 200
+                );
+                
+                const intensity = gameState.battery / 100;
+                gradient.addColorStop(0, `rgba(255, 255, 200, ${0.3 * intensity})`);
+                gradient.addColorStop(0.5, `rgba(255, 255, 150, ${0.1 * intensity})`);
+                gradient.addColorStop(1, 'rgba(255, 255, 100, 0)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                
+                const angle = gameState.player.dir;
+                const width = Math.PI / 3;
+                ctx.moveTo(gameState.player.x, gameState.player.y);
+                ctx.arc(gameState.player.x, gameState.player.y, 200, angle - width/2, angle + width/2);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            // Emergency lights (red, flickering)
+            ctx.fillStyle = Math.random() > 0.2 ? '#ff0000' : '#aa0000';
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.arc(50 + i * 100, 30, 10, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawHUD(ctx) {
+            // Current task indicator
+            if (gameState.currentTask) {
+                const spill = gameState.aisleSpills[gameState.currentTask.aisle];
+                if (spill && spill.active) {
+                    // Draw arrow pointing to task
+                    const angle = Math.atan2(
+                        spill.y - gameState.player.y,
+                        spill.x - gameState.player.x
+                    );
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(spill.x - gameState.player.x, 2) +
+                        Math.pow(spill.y - gameState.player.y, 2)
+                    );
+                    
+                    if (distance > 100) {
+                        const arrowX = gameState.player.x + Math.cos(angle) * 50;
+                        const arrowY = gameState.player.y + Math.sin(angle) * 50;
+                        
+                        ctx.fillStyle = '#ffff00';
+                        ctx.beginPath();
+                        ctx.moveTo(arrowX, arrowY);
+                        ctx.lineTo(arrowX - 10, arrowY - 5);
+                        ctx.lineTo(arrowX - 10, arrowY + 5);
+                        ctx.closePath();
+                        ctx.fill();
+                        
+                        ctx.fillStyle = '#ffff00';
+                        ctx.font = '12px VT323';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(`${Math.floor(distance)}m`, arrowX, arrowY - 10);
+                    }
+                }
+            }
+        }
+
+        // ==================== UI FUNCTIONS ====================
+        function updateUI() {
+            // Update meters
+            updateMeter('sanityFill', 'sanityValue', gameState.sanity);
+            updateMeter('batteryFill', 'batteryValue', gameState.battery);
+            updateMeter('storeFill', 'storeValue', gameState.storeIntegrity);
+            
+            // Update time
+            const hours = Math.floor(gameState.time);
+            const minutes = Math.floor((gameState.time - hours) * 60);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHour = hours > 12 ? hours - 12 : hours;
+            document.getElementById('timeDisplay').textContent = 
+                `SHIFT: ${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+            
+            // Update objectives
+            const objDisplay = document.getElementById('objectiveDisplay');
+            if (gameState.currentTask) {
+                objDisplay.innerHTML = `
+                    <strong>PRIMARY:</strong> Survive until 6:00 AM<br>
+                    <strong style="color:#ffff00">ACTIVE TASK:</strong> ${gameState.currentTask.description}<br>
+                    <small>Go to Aisle ${gameState.currentTask.aisle} and press C</small>
+                `;
+            } else {
+                objDisplay.innerHTML = `
+                    <strong>PRIMARY OBJECTIVE:</strong><br>
+                    Survive until 6:00 AM<br>
+                    <strong>ACTIVE TASK:</strong> None - waiting for next assignment
+                `;
+            }
+            
+            // Update inventory display in debug
+            const invCounts = {};
+            gameState.player.inventory.forEach(item => {
+                invCounts[item.type] = (invCounts[item.type] || 0) + 1;
+            });
+            
+            const invText = Object.entries(invCounts)
+                .map(([type, count]) => `${type}: ${count}`)
+                .join(', ');
+            
+            if (invText) {
+                updateDebug(`Inventory: ${invText} | Tasks: ${gameState.completedTasks}`);
+            }
+        }
+
+        function updateMeter(fillId, valueId, percent) {
+            const fill = document.getElementById(fillId);
+            const value = document.getElementById(valueId);
+            
+            if (fill && value) {
+                fill.style.width = percent + '%';
+                value.textContent = Math.floor(percent) + '%';
+            }
+        }
+
+        function updatePADisplay(message) {
+            const paDisplay = document.getElementById('paDisplay');
+            if (paDisplay) {
+                paDisplay.textContent = `PA: ${message}`;
+                paDisplay.style.animation = 'none';
+                setTimeout(() => {
+                    paDisplay.style.animation = 'pulse 0.5s 3';
+                }, 10);
+            }
+        }
+
+        function updateDebug(message) {
+            const debug = document.getElementById('debug');
+            if (debug) {
+                debug.textContent = message;
+                
+                setTimeout(() => {
+                    if (debug.textContent === message) {
+                        debug.textContent = `Shift active. ${gameState.completedTasks} tasks completed.`;
+                    }
+                }, 5000);
+            }
+        }
+
+        // ==================== GAME END ====================
+        function endShift(success, message) {
+            gameState.gameOver = true;
+            
+            const hoursSurvived = ((gameState.time - 22 + 24) % 24).toFixed(1);
+            const score = Math.floor(
+                gameState.sanity * 0.5 +
+                gameState.storeIntegrity * 0.3 +
+                gameState.completedTasks * 20 +
+                hoursSurvived * 10
+            );
+            
+            if (success) {
+                const winMessage = `
+                    SHIFT COMPLETE!
+                    
+                    You survived until 6:00 AM!
+                    
+                    FINAL STATS:
+                    Sanity: ${Math.floor(gameState.sanity)}%
+                    Battery: ${Math.floor(gameState.battery)}%
+                    Store Integrity: ${Math.floor(gameState.storeIntegrity)}%
+                    Tasks Completed: ${gameState.completedTasks}
+                    Hours Survived: ${hoursSurvived}
+                    
+                    PERFORMANCE SCORE: ${score}
+                    
+                    The fog lifts... for now.
+                    Corporate will review your performance.
+                    
+                    Press R to work another shift.
+                `;
+                alert(winMessage);
+            } else {
+                const loseMessage = `
+                    GAME OVER
+                    
+                    ${message}
+                    
+                    FINAL STATS:
+                    Shift Duration: ${hoursSurvived} hours
+                    Sanity: ${Math.floor(gameState.sanity)}%
+                    Store: ${Math.floor(gameState.storeIntegrity)}%
+                    Tasks: ${gameState.completedTasks}
+                    
+                    SCORE: ${score}
+                    
+                    Press R to try again.
+                `;
+                alert(loseMessage);
+            }
+        }
+
+        // Restart on R press
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r' && gameState.gameOver) {
+                document.location.reload();
+            }
+        });
+    </script>
+</body>
+</html>
