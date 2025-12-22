@@ -145,6 +145,10 @@
             background: linear-gradient(90deg, #00ff00, #ff8800, #880000);
         }
 
+        #batteryFill {
+            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
+        }
+
         .meter-value {
             position: absolute;
             right: 5px;
@@ -218,6 +222,11 @@
             font-size: 14px;
             min-height: 20px;
             font-family: monospace;
+            padding: 5px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #ffff00;
+            width: 800px;
+            text-align: center;
         }
 
         #loading {
@@ -229,6 +238,9 @@
             font-size: 32px;
             text-align: center;
             z-index: 100;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border: 2px solid #00ff00;
         }
 
         .glitch {
@@ -263,6 +275,44 @@
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
+        
+        #menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 20, 0, 0.95);
+            border: 4px solid #00ff00;
+            padding: 30px;
+            z-index: 1000;
+            text-align: center;
+            min-width: 400px;
+            display: none;
+        }
+        
+        .menu-title {
+            color: #00ff00;
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        .menu-button {
+            background: #005500;
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 20px;
+            font-family: 'VT323', monospace;
+            cursor: pointer;
+            width: 200px;
+            transition: all 0.3s;
+        }
+        
+        .menu-button:hover {
+            background: #00aa00;
+            transform: scale(1.05);
+        }
     </style>
 </head>
 <body>
@@ -274,13 +324,37 @@
     
     <div id="loading">LOADING MEGA-MART SYSTEMS...</div>
     
-    <div id="gameContainer">
+    <div id="menu">
+        <div class="menu-title">THE LAST SHIFT</div>
+        <button class="menu-button" onclick="startGame()">START SHIFT</button>
+        <button class="menu-button" onclick="showInstructions()">INSTRUCTIONS</button>
+        <button class="menu-button" onclick="showCredits()">CREDITS</button>
+        <div id="instructions" style="display: none; margin-top: 20px; text-align: left;">
+            <h3>HOW TO SURVIVE:</h3>
+            <p>• WASD to move, SHIFT to run</p>
+            <p>• F to toggle flashlight</p>
+            <p>• SPACE to pick up items</p>
+            <p>• Q/E to switch tools</p>
+            <p>• R to use selected tool</p>
+            <p>• L to barricade doors</p>
+            <p>• C to clean blood stains</p>
+            <p>• Survive until 6:00 AM!</p>
+            <button class="menu-button" onclick="hideInstructions()" style="margin-top: 20px;">BACK</button>
+        </div>
+        <div id="credits" style="display: none; margin-top: 20px;">
+            <p>Created by Oriokay</p>
+            <p>Inspired by Red Handed</p>
+            <button class="menu-button" onclick="hideCredits()" style="margin-top: 20px;">BACK</button>
+        </div>
+    </div>
+    
+    <div id="gameContainer" style="display: none;">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div class="scanlines"></div>
         <div class="vignette"></div>
     </div>
     
-    <div id="ui">
+    <div id="ui" style="display: none;">
         <div class="resource-panel">
             <div class="meter-container">
                 <div class="meter-label">SANITY</div>
@@ -312,7 +386,7 @@
         </div>
     </div>
     
-    <div id="controls">
+    <div id="controls" style="display: none;">
         <div class="control-group">
             <div class="control-title">MOVEMENT</div>
             <div>WASD / Arrows: Move</div>
@@ -339,15 +413,504 @@
     
     <div id="debug">SYSTEMS NOMINAL | SHIFT ACTIVE</div>
 
-    <!-- Load JavaScript modules -->
-    <script src="js/map.js"></script>
-    <script src="js/entities.js"></script>
-    <script src="js/items.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/pa.js"></script>
-    <script src="js/audio.js"></script>
-    <script src="js/game.js"></script>
-    <script src="js/main.js"></script>
+    <!-- ALL GAME CODE IN ONE FILE -->
+    <script>
+        // ==================== GAME INITIALIZATION ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("The Last Shift - Loading...");
+            
+            // Hide loading, show menu after a moment
+            setTimeout(function() {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('menu').style.display = 'block';
+            }, 1000);
+        });
+        
+        // Menu functions
+        function startGame() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            document.getElementById('ui').style.display = 'grid';
+            document.getElementById('controls').style.display = 'grid';
+            
+            // Initialize game
+            initGame();
+        }
+        
+        function showInstructions() {
+            document.getElementById('instructions').style.display = 'block';
+        }
+        
+        function hideInstructions() {
+            document.getElementById('instructions').style.display = 'none';
+        }
+        
+        function showCredits() {
+            document.getElementById('credits').style.display = 'block';
+        }
+        
+        function hideCredits() {
+            document.getElementById('credits').style.display = 'none';
+        }
+        
+        // ==================== GAME ENGINE ====================
+        function initGame() {
+            console.log("Starting game...");
+            
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Game state
+            const gameState = {
+                time: 22.0, // 10:00 PM
+                shiftEnd: 6.0,
+                sanity: 100,
+                storeIntegrity: 100,
+                battery: 100,
+                flashlightOn: true,
+                gameOver: false,
+                player: { x: 400, y: 300, dir: 0 },
+                entities: [],
+                items: [],
+                tools: ['Flashlight', 'Scanner', 'Air Horn'],
+                currentTool: 0,
+                paMessages: [
+                    "Welcome to Mega-Mart. Have a productive shift.",
+                    "Cleanup needed in Aisle 3.",
+                    "Customer satisfaction is our priority.",
+                    "The fog is getting thicker tonight..."
+                ],
+                currentPaMessage: 0
+            };
+            
+            // Generate store layout
+            generateStore(ctx);
+            
+            // Spawn items
+            spawnItems();
+            
+            // Spawn entities
+            spawnEntities();
+            
+            // Setup input
+            const keys = {};
+            setupInput(keys);
+            
+            // Start game loop
+            let lastTime = 0;
+            function gameLoop(currentTime) {
+                const deltaTime = currentTime - lastTime || 0;
+                lastTime = currentTime;
+                
+                if (!gameState.gameOver) {
+                    updateGame(gameState, deltaTime, keys, canvas);
+                    drawGame(ctx, gameState, canvas);
+                    
+                    // Update UI
+                    updateUI(gameState);
+                }
+                
+                requestAnimationFrame(gameLoop);
+            }
+            
+            gameLoop(0);
+            
+            // Initial PA message
+            updatePADisplay(gameState);
+        }
+        
+        // ==================== STORE GENERATION ====================
+        function generateStore(ctx) {
+            // Draw floor
+            ctx.fillStyle = '#222244';
+            ctx.fillRect(0, 0, 800, 600);
+            
+            // Draw grid pattern (aisles)
+            ctx.strokeStyle = '#333366';
+            ctx.lineWidth = 2;
+            
+            // Vertical aisles
+            for (let x = 100; x < 800; x += 150) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, 600);
+                ctx.stroke();
+            }
+            
+            // Horizontal aisles
+            for (let y = 100; y < 600; y += 150) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(800, y);
+                ctx.stroke();
+            }
+            
+            // Draw walls (boundaries)
+            ctx.strokeStyle = '#d4b483';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(0, 0, 800, 600);
+            
+            // Draw checkout counters
+            ctx.fillStyle = '#666666';
+            ctx.fillRect(50, 500, 700, 20);
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(100, 505, 50, 10); // register screen
+            
+            // Draw shelves
+            ctx.fillStyle = '#8b4513';
+            for (let i = 0; i < 5; i++) {
+                ctx.fillRect(120 + i*130, 100, 100, 200);
+            }
+            
+            // Draw freezer section
+            ctx.fillStyle = '#aaccff';
+            ctx.fillRect(50, 100, 50, 300);
+            
+            // Draw break room
+            ctx.fillStyle = '#444444';
+            ctx.fillRect(700, 100, 80, 80);
+            ctx.fillStyle = '#888888';
+            ctx.fillRect(710, 110, 20, 20); // table
+            ctx.fillRect(750, 110, 20, 20); // vending machine
+            
+            // Draw windows
+            ctx.fillStyle = '#88aaff';
+            for (let i = 0; i < 4; i++) {
+                ctx.fillRect(0, 150 + i*100, 10, 40);
+                ctx.fillRect(790, 150 + i*100, 10, 40);
+            }
+            
+            // Draw lights
+            ctx.fillStyle = '#ffffaa';
+            for (let x = 75; x < 800; x += 150) {
+                for (let y = 75; y < 600; y += 150) {
+                    ctx.beginPath();
+                    ctx.arc(x, y, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        // ==================== ITEMS ====================
+        function spawnItems() {
+            // This would be populated in a real implementation
+        }
+        
+        // ==================== ENTITIES ====================
+        function spawnEntities() {
+            // This would be populated in a real implementation
+        }
+        
+        // ==================== INPUT ====================
+        function setupInput(keys) {
+            window.addEventListener('keydown', (e) => {
+                const key = e.key.toLowerCase();
+                keys[key] = true;
+                
+                // Handle flashlight
+                if (key === 'f') {
+                    // Toggle flashlight logic would go here
+                    updateDebug("Flashlight toggled");
+                }
+                
+                // Handle tool switching
+                if (key === 'q') {
+                    updateDebug("Previous tool");
+                }
+                if (key === 'e') {
+                    updateDebug("Next tool");
+                }
+                
+                // Handle tool use
+                if (key === 'r') {
+                    updateDebug("Using tool");
+                }
+                
+                // PA system
+                if (key === 'p') {
+                    updateDebug("PA announcement made");
+                }
+            });
+            
+            window.addEventListener('keyup', (e) => {
+                keys[e.key.toLowerCase()] = false;
+            });
+        }
+        
+        // ==================== UPDATE GAME ====================
+        function updateGame(gameState, deltaTime, keys, canvas) {
+            // Update time (1 minute game time = 1 second real time)
+            gameState.time += deltaTime * 0.0001667; // 6 hours = 6 minutes real time
+            
+            if (gameState.time >= 24) {
+                gameState.time = 0;
+            }
+            
+            // Check for shift end
+            if (gameState.time >= gameState.shiftEnd && gameState.time < gameState.shiftEnd + 0.1) {
+                gameState.gameOver = true;
+                showWinScreen(gameState);
+            }
+            
+            // Update player movement
+            const speed = keys['shift'] ? 4 : 2;
+            if (keys['w'] || keys['arrowup']) {
+                gameState.player.y = Math.max(20, gameState.player.y - speed);
+                gameState.player.dir = -Math.PI / 2;
+            }
+            if (keys['s'] || keys['arrowdown']) {
+                gameState.player.y = Math.min(580, gameState.player.y + speed);
+                gameState.player.dir = Math.PI / 2;
+            }
+            if (keys['a'] || keys['arrowleft']) {
+                gameState.player.x = Math.max(20, gameState.player.x - speed);
+                gameState.player.dir = Math.PI;
+            }
+            if (keys['d'] || keys['arrowright']) {
+                gameState.player.x = Math.min(780, gameState.player.x + speed);
+                gameState.player.dir = 0;
+            }
+            
+            // Update battery if flashlight is on
+            if (gameState.flashlightOn && gameState.battery > 0) {
+                gameState.battery = Math.max(0, gameState.battery - deltaTime * 0.01);
+                if (gameState.battery <= 0) {
+                    gameState.flashlightOn = false;
+                }
+            }
+            
+            // Update sanity based on conditions
+            updateSanity(gameState, deltaTime, keys);
+            
+            // Update store integrity
+            updateStoreIntegrity(gameState, deltaTime);
+            
+            // Random PA messages
+            if (Math.random() < 0.001) {
+                gameState.currentPaMessage = (gameState.currentPaMessage + 1) % gameState.paMessages.length;
+                updatePADisplay(gameState);
+            }
+        }
+        
+        function updateSanity(gameState, deltaTime, keys) {
+            let drain = 0;
+            
+            // Drain from running
+            if (keys['shift']) {
+                drain += deltaTime * 0.02;
+            }
+            
+            // Drain from darkness (if flashlight off and in dark area)
+            if (!gameState.flashlightOn) {
+                drain += deltaTime * 0.01;
+            }
+            
+            // Apply drain
+            gameState.sanity = Math.max(0, gameState.sanity - drain);
+            
+            // Check for game over
+            if (gameState.sanity <= 0 && !gameState.gameOver) {
+                gameState.gameOver = true;
+                showGameOver("You've lost your mind. The store consumes you.");
+            }
+        }
+        
+        function updateStoreIntegrity(gameState, deltaTime) {
+            // Random integrity loss
+            if (Math.random() < 0.0005) {
+                gameState.storeIntegrity = Math.max(0, gameState.storeIntegrity - 1);
+            }
+            
+            // Check for game over
+            if (gameState.storeIntegrity <= 0 && !gameState.gameOver) {
+                gameState.gameOver = true;
+                showGameOver("Store integrity compromised. Corporate termination initiated.");
+            }
+        }
+        
+        // ==================== DRAW GAME ====================
+        function drawGame(ctx, gameState, canvas) {
+            // Clear canvas
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Redraw static store (in a real game, you'd have layers)
+            generateStore(ctx);
+            
+            // Draw player
+            drawPlayer(ctx, gameState.player);
+            
+            // Draw flashlight effect if on
+            if (gameState.flashlightOn) {
+                drawFlashlight(ctx, gameState.player);
+            }
+            
+            // Draw lighting effects
+            drawLighting(ctx);
+        }
+        
+        function drawPlayer(ctx, player) {
+            // Player body (uniform - blue)
+            ctx.fillStyle = '#6b8cff';
+            ctx.fillRect(player.x - 8, player.y - 12, 16, 24);
+            
+            // Player head
+            ctx.fillStyle = '#ffcc99';
+            ctx.fillRect(player.x - 4, player.y - 16, 8, 8);
+            
+            // Flashlight indicator
+            ctx.fillStyle = '#ffff00';
+            ctx.fillRect(player.x - 2, player.y - 14, 4, 4);
+            
+            // Direction indicator
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const dirX = player.x + Math.cos(player.dir) * 15;
+            const dirY = player.y + Math.sin(player.dir) * 15;
+            ctx.moveTo(player.x, player.y);
+            ctx.lineTo(dirX, dirY);
+            ctx.stroke();
+        }
+        
+        function drawFlashlight(ctx, player) {
+            const gradient = ctx.createRadialGradient(
+                player.x, player.y, 10,
+                player.x, player.y, 200
+            );
+            
+            gradient.addColorStop(0, 'rgba(255, 255, 200, 0.3)');
+            gradient.addColorStop(0.5, 'rgba(255, 255, 150, 0.1)');
+            gradient.addColorStop(1, 'rgba(255, 255, 100, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            
+            // Flashlight cone
+            const angle = player.dir;
+            const width = Math.PI / 3;
+            const startAngle = angle - width / 2;
+            const endAngle = angle + width / 2;
+            
+            ctx.moveTo(player.x, player.y);
+            ctx.arc(player.x, player.y, 200, startAngle, endAngle);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawLighting(ctx) {
+            // Draw emergency lights (red, flickering)
+            ctx.fillStyle = Math.random() > 0.1 ? '#ff0000' : '#aa0000';
+            for (let i = 0; i < 8; i++) {
+                ctx.beginPath();
+                ctx.arc(50 + i * 100, 30, 15, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw flickering store lights
+            ctx.fillStyle = Math.random() > 0.05 ? '#ffffaa' : '#aaaa77';
+            for (let x = 75; x < 800; x += 150) {
+                for (let y = 75; y < 600; y += 150) {
+                    if (Math.random() > 0.02) { // Random flicker
+                        ctx.beginPath();
+                        ctx.arc(x, y, 8, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+        
+        // ==================== UI FUNCTIONS ====================
+        function updateUI(gameState) {
+            // Update sanity
+            const sanityPercent = Math.floor(gameState.sanity);
+            document.getElementById('sanityFill').style.width = sanityPercent + '%';
+            document.getElementById('sanityValue').textContent = sanityPercent + '%';
+            
+            // Update battery
+            const batteryPercent = Math.floor(gameState.battery);
+            document.getElementById('batteryFill').style.width = batteryPercent + '%';
+            document.getElementById('batteryValue').textContent = batteryPercent + '%';
+            
+            // Update store integrity
+            const storePercent = Math.floor(gameState.storeIntegrity);
+            document.getElementById('storeFill').style.width = storePercent + '%';
+            document.getElementById('storeValue').textContent = storePercent + '%';
+            
+            // Update time display
+            const hours = Math.floor(gameState.time);
+            const minutes = Math.floor((gameState.time - hours) * 60);
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            const displayHour = hours > 12 ? hours - 12 : hours;
+            document.getElementById('timeDisplay').textContent = 
+                `SHIFT: ${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
+        }
+        
+        function updatePADisplay(gameState) {
+            const paDisplay = document.getElementById('paDisplay');
+            if (paDisplay) {
+                paDisplay.textContent = `PA: ${gameState.paMessages[gameState.currentPaMessage]}`;
+                
+                // Flash red for new messages
+                paDisplay.style.animation = 'none';
+                setTimeout(() => {
+                    paDisplay.style.animation = 'pulse 0.5s 3';
+                }, 10);
+            }
+        }
+        
+        function updateDebug(message) {
+            const debug = document.getElementById('debug');
+            if (debug) {
+                debug.textContent = message;
+                
+                // Clear after 3 seconds
+                setTimeout(() => {
+                    if (debug.textContent === message) {
+                        debug.textContent = 'SYSTEMS NOMINAL | SHIFT ACTIVE';
+                    }
+                }, 3000);
+            }
+        }
+        
+        // ==================== GAME OVER/WIN ====================
+        function showWinScreen(gameState) {
+            const message = `
+                SHIFT COMPLETE!
+                
+                You survived the night at Mega-Mart!
+                
+                FINAL STATS:
+                Sanity: ${Math.floor(gameState.sanity)}%
+                Store Integrity: ${Math.floor(gameState.storeIntegrity)}%
+                Battery: ${Math.floor(gameState.battery)}%
+                
+                The fog lifts... for now.
+                
+                Press R to work another shift.
+            `;
+            
+            alert(message);
+        }
+        
+        function showGameOver(reason) {
+            const message = `
+                GAME OVER
+                
+                ${reason}
+                
+                Press R to try again.
+            `;
+            
+            alert(message);
+        }
+        
+        // Restart game on R press
+        window.addEventListener('keydown', (e) => {
+            if (e.key.toLowerCase() === 'r') {
+                document.location.reload();
+            }
+        });
+    </script>
 </body>
 </html>
