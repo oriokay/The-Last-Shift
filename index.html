@@ -3,1527 +3,1079 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Last Shift - Mega-Mart Survival</title>
+    <title>RAZE: Hellfire Protocol</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
         
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            image-rendering: pixelated;
-            image-rendering: crisp-edges;
+            user-select: none;
         }
 
         body {
-            background: #0a0a0a;
-            color: #aaffaa;
-            font-family: 'VT323', monospace;
+            background: #000;
+            color: #ff4444;
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-            overflow-x: hidden;
-            text-shadow: 0 0 5px #00ff00;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 20px;
-            padding: 10px;
-            border-bottom: 2px solid #00ff00;
-            width: 100%;
-            max-width: 1000px;
-        }
-
-        h1 {
-            font-size: 48px;
-            color: #00ff00;
-            margin-bottom: 10px;
-            letter-spacing: 3px;
-            text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
-        }
-
-        .subtitle {
-            color: #88ff88;
-            font-size: 20px;
-            margin-bottom: 15px;
+            height: 100vh;
+            cursor: crosshair;
         }
 
         #gameContainer {
             position: relative;
-            border: 4px solid #005500;
-            border-image: linear-gradient(45deg, #005500, #00aa00, #005500) 1;
-            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3),
-                        inset 0 0 30px rgba(0, 255, 0, 0.1);
+            border: 3px solid #ff0000;
+            box-shadow: 
+                0 0 30px #ff0000,
+                inset 0 0 30px rgba(255, 0, 0, 0.3);
             background: #000;
         }
 
         #gameCanvas {
             display: block;
-            background: #000;
+            image-rendering: crisp-edges;
+            image-rendering: pixelated;
         }
 
-        .scanlines {
+        #hud {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(
-                to bottom,
-                transparent 50%,
-                rgba(0, 0, 0, 0.5) 50%
-            );
-            background-size: 100% 4px;
             pointer-events: none;
-            opacity: 0.3;
-            z-index: 10;
+            z-index: 100;
         }
 
-        .vignette {
+        #healthBar {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
-            pointer-events: none;
-            z-index: 5;
-        }
-
-        #ui {
-            margin-top: 20px;
-            width: 800px;
-            background: rgba(0, 20, 0, 0.8);
-            border: 2px solid #005500;
-            padding: 15px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            font-size: 20px;
-        }
-
-        .resource-panel {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .meter-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .meter-label {
-            min-width: 120px;
-            color: #88ff88;
-        }
-
-        .meter {
-            flex: 1;
-            height: 24px;
-            border: 2px solid #005500;
-            background: #001100;
-            position: relative;
+            bottom: 120px;
+            left: 30px;
+            width: 300px;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 3px solid #ff0000;
             overflow: hidden;
         }
 
-        .meter-fill {
+        #healthFill {
             height: 100%;
-            transition: width 0.3s ease, background 0.3s;
+            background: linear-gradient(90deg, #ff0000, #ffff00);
+            width: 100%;
+            transition: width 0.3s;
         }
 
-        #sanityFill {
-            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
-        }
-
-        #storeFill {
-            background: linear-gradient(90deg, #00ff00, #ff8800, #880000);
-        }
-
-        #batteryFill {
-            background: linear-gradient(90deg, #00ff00, #ffff00, #ff0000);
-        }
-
-        .meter-value {
+        #healthText {
             position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #fff;
+            bottom: 125px;
+            left: 340px;
+            color: #ff0000;
+            font-size: 24px;
             font-weight: bold;
-            text-shadow: 0 0 3px #000;
+            text-shadow: 0 0 10px #ff0000;
         }
 
-        #infoPanel {
+        #ammo {
+            position: absolute;
+            bottom: 120px;
+            right: 30px;
+            color: #ffff00;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #ffff00;
+        }
+
+        #weapon {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            height: 200px;
+            pointer-events: none;
+        }
+
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: #ff0000;
+            border: 1px solid #ffffff;
+            pointer-events: none;
+        }
+
+        #minimap {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 200px;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #ff0000;
+            z-index: 101;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ffff00;
+            font-size: 48px;
+            text-align: center;
+            text-shadow: 0 0 20px #ff0000;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+        }
+
+        #loadingScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
         }
 
-        #timeDisplay {
-            font-size: 28px;
-            color: #00ffff;
-            text-align: center;
-            padding: 5px;
-            background: rgba(0, 40, 40, 0.8);
-            border: 1px solid #008888;
+        #loadingTitle {
+            font-size: 72px;
+            color: #ff0000;
+            margin-bottom: 50px;
+            text-shadow: 0 0 30px #ff0000;
+            animation: pulse 2s infinite;
         }
 
-        #objectiveDisplay {
-            font-size: 16px;
-            color: #ffff88;
-            min-height: 60px;
-            padding: 5px;
-            background: rgba(40, 40, 0, 0.8);
-            border: 1px solid #888800;
+        #loadingBar {
+            width: 500px;
+            height: 30px;
+            background: #222;
+            border: 3px solid #ff0000;
+            margin-top: 20px;
+            overflow: hidden;
         }
 
-        #paDisplay {
-            font-size: 14px;
+        #loadingProgress {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0000, #ff8800);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        #loadingText {
             color: #ff8888;
-            min-height: 40px;
-            padding: 5px;
-            background: rgba(40, 0, 0, 0.8);
-            border: 1px solid #880000;
-            font-style: italic;
+            font-size: 20px;
+            margin-top: 10px;
         }
 
         #controls {
-            margin-top: 20px;
-            width: 800px;
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            font-size: 16px;
-            color: #88aaff;
-        }
-
-        .control-group {
-            background: rgba(0, 0, 40, 0.8);
-            padding: 10px;
-            border: 1px solid #0000aa;
-        }
-
-        .control-title {
-            color: #aaaaff;
-            margin-bottom: 5px;
-            border-bottom: 1px solid #0000aa;
-            padding-bottom: 3px;
-        }
-
-        #debug {
-            margin-top: 10px;
-            color: #ffff00;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #888888;
             font-size: 14px;
-            min-height: 20px;
-            font-family: monospace;
-            padding: 5px;
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid #ffff00;
-            width: 800px;
-            text-align: center;
+            line-height: 1.5;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border: 1px solid #444444;
         }
 
-        #loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #00ff00;
-            font-size: 32px;
-            text-align: center;
-            z-index: 100;
-            background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
-            border: 2px solid #00ff00;
-        }
-
-        #menu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 20, 0, 0.95);
-            border: 4px solid #00ff00;
-            padding: 30px;
-            z-index: 1000;
-            text-align: center;
-            min-width: 400px;
-        }
-        
-        .menu-title {
-            color: #00ff00;
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-        
-        .menu-button {
-            background: #005500;
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            padding: 15px 30px;
-            margin: 10px;
-            font-size: 20px;
-            font-family: 'VT323', monospace;
-            cursor: pointer;
-            width: 200px;
-            transition: all 0.3s;
-        }
-        
-        .menu-button:hover {
-            background: #00aa00;
-            transform: scale(1.05);
-        }
-        
-        #taskTutorial {
-            position: absolute;
-            top: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 40, 0.9);
-            border: 3px solid #0000ff;
-            padding: 15px;
-            z-index: 100;
-            color: #aaaaff;
-            width: 600px;
-            display: none;
-        }
-        
-        .aisle-marker {
-            position: absolute;
-            color: #ff0000;
-            font-weight: bold;
-            z-index: 50;
-            pointer-events: none;
-            text-shadow: 0 0 5px #000;
-        }
-        
-        .item-sparkle {
-            animation: sparkle 1s infinite;
-        }
-        
-        @keyframes sparkle {
+        @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.7; }
+        }
+
+        @keyframes weaponFire {
+            0% { transform: translateX(-50%) translateY(0); }
+            25% { transform: translateX(-50%) translateY(-10px); }
+            100% { transform: translateX(-50%) translateY(0); }
+        }
+
+        @keyframes damageFlash {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(255, 0, 0, 0.3); }
+            100% { background-color: transparent; }
+        }
+
+        .fire {
+            animation: weaponFire 0.1s ease;
+        }
+
+        .damage {
+            animation: damageFlash 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>THE LAST SHIFT</h1>
-        <div class="subtitle">Mega-Mart Night Survival Horror</div>
-        <div id="employeeInfo">Shift #001 | Employee ID: #731-66</div>
-    </div>
-    
-    <div id="loading">LOADING MEGA-MART SYSTEMS...</div>
-    
-    <div id="menu">
-        <div class="menu-title">THE LAST SHIFT</div>
-        <button class="menu-button" onclick="startGame()">START SHIFT</button>
-        <button class="menu-button" onclick="showTutorial()">HOW TO PLAY</button>
-        <button class="menu-button" onclick="showStoreMap()">STORE MAP</button>
-        
-        <div id="tutorial" style="display: none; margin-top: 20px; text-align: left;">
-            <h3 style="color: #00ffff;">HOW TO SURVIVE YOUR SHIFT:</h3>
-            <p>🏪 <strong>YOUR GOAL:</strong> Survive until 6:00 AM while completing tasks</p>
-            <p>🔋 <strong>BATTERY:</strong> Use flashlight (F) sparingly. Find batteries on shelves.</p>
-            <p>😰 <strong>SANITY:</strong> Don't stay in dark too long. Drink soda in break room.</p>
-            <p>🛒 <strong>TASKS:</strong> When PA announces cleanup, find the glowing spill in that aisle.</p>
-            <p>👻 <strong>CUSTOMERS:</strong> Avoid purple figures. They'll chase if you get close.</p>
-            <p>🛡️ <strong>STORE INTEGRITY:</strong> Fix broken windows with duct tape (L key).</p>
-            <p>⚡ <strong>QUICK TIP:</strong> Run (SHIFT) only in emergencies - drains sanity fast!</p>
-            <button class="menu-button" onclick="hideTutorial()" style="margin-top: 20px;">START GAME</button>
-        </div>
-        
-        <div id="storeMap" style="display: none; margin-top: 20px;">
-            <h3 style="color: #00ffff;">MEGA-MART LAYOUT:</h3>
-            <pre style="text-align: left; color: #88ff88; font-size: 14px;">
-    ENTRANCE ────────────────────────────────────────────────────
-    │                                                           │
-    │  [AISLE 1] Electronics  [AISLE 2] Clothing               │
-    │  [AISLE 3] Cleaning     [AISLE 4] Food                   │
-    │  [AISLE 5] Hardware     [AISLE 6] Home Goods             │
-    │  [AISLE 7] Pharmacy     [AISLE 8] Seasonal               │
-    │                                                           │
-    │  [FREEZER]─────────[CHECKOUT]─────────[BREAK ROOM]       │
-    │                                                           │
-    └───────────────────────────────────────────────────────────┘
-            </pre>
-            <p>Aisles are numbered left to right. Look for aisle signs!</p>
-            <button class="menu-button" onclick="hideMap()" style="margin-top: 20px;">BACK</button>
+    <div id="loadingScreen">
+        <div id="loadingTitle">RAZE: Hellfire Protocol</div>
+        <div id="loadingText">LOADING DEMONIC INVASION...</div>
+        <div id="loadingBar">
+            <div id="loadingProgress"></div>
         </div>
     </div>
-    
-    <div id="taskTutorial">
-        <h3>NEW TASK AVAILABLE!</h3>
-        <p id="taskDescription"></p>
-        <p><strong>How to complete:</strong> Go to the correct aisle, find the glowing spill, press C to clean it!</p>
-        <button onclick="hideTaskTutorial()">GOT IT</button>
-    </div>
-    
+
     <div id="gameContainer" style="display: none;">
-        <canvas id="gameCanvas" width="800" height="600"></canvas>
-        <div class="scanlines"></div>
-        <div class="vignette"></div>
+        <canvas id="gameCanvas" width="1200" height="800"></canvas>
         
-        <!-- Aisle number markers -->
-        <div id="aisleMarkers"></div>
-    </div>
-    
-    <div id="ui" style="display: none;">
-        <div class="resource-panel">
-            <div class="meter-container">
-                <div class="meter-label">SANITY</div>
-                <div class="meter">
-                    <div id="sanityFill" class="meter-fill" style="width: 100%"></div>
-                    <div id="sanityValue" class="meter-value">100%</div>
-                </div>
+        <div id="hud">
+            <div id="healthBar">
+                <div id="healthFill"></div>
             </div>
-            <div class="meter-container">
-                <div class="meter-label">BATTERY</div>
-                <div class="meter">
-                    <div id="batteryFill" class="meter-fill" style="width: 100%"></div>
-                    <div id="batteryValue" class="meter-value">100%</div>
-                </div>
-            </div>
-            <div class="meter-container">
-                <div class="meter-label">STORE</div>
-                <div class="meter">
-                    <div id="storeFill" class="meter-fill" style="width: 100%"></div>
-                    <div id="storeValue" class="meter-value">100%</div>
-                </div>
-            </div>
-        </div>
-        
-        <div id="infoPanel">
-            <div id="timeDisplay" class="flicker">SHIFT: 10:00 PM</div>
-            <div id="objectiveDisplay">
-                <strong>PRIMARY OBJECTIVE:</strong><br>
-                Survive until 6:00 AM<br>
-                <strong>ACTIVE TASK:</strong> None
-            </div>
-            <div id="paDisplay">PA: Welcome to Mega-Mart. Your shift begins now.</div>
+            <div id="healthText">HEALTH</div>
+            <div id="ammo">00</div>
+            <div id="weapon"></div>
+            <div id="crosshair"></div>
+            <canvas id="minimap" width="200" height="200"></canvas>
+            <div id="message"></div>
         </div>
     </div>
-    
+
     <div id="controls" style="display: none;">
-        <div class="control-group">
-            <div class="control-title">MOVEMENT</div>
-            <div>WASD: Move</div>
-            <div>SHIFT: Run (⚠ drains sanity)</div>
-            <div>SPACE: Pick up items</div>
-        </div>
-        
-        <div class="control-group">
-            <div class="control-title">ACTIONS</div>
-            <div>F: Flashlight On/Off</div>
-            <div>C: Clean spills</div>
-            <div>L: Fix window/barricade</div>
-            <div>P: Make PA announcement</div>
-        </div>
-        
-        <div class="control-group">
-            <div class="control-title">ITEMS</div>
-            <div>Battery: Recharges flashlight</div>
-            <div>Soda: Restores sanity +30%</div>
-            <div>Tape: Fixes windows +15% store</div>
-            <div>Scanner: Finds items/entities</div>
-        </div>
+        <div><strong>WASD:</strong> Move</div>
+        <div><strong>Mouse:</strong> Aim/Look</div>
+        <div><strong>Left Click:</strong> Shoot</div>
+        <div><strong>R:</strong> Reload</div>
+        <div><strong>1-4:</strong> Switch Weapons</div>
+        <div><strong>E:</strong> Use/Open</div>
+        <div><strong>Shift:</strong> Run</div>
+        <div><strong>Space:</strong> Jump</div>
     </div>
-    
-    <div id="debug">Ready for shift. Move with WASD, F for flashlight.</div>
 
-    <!-- ALL GAME CODE IN ONE FILE -->
     <script>
-        // ==================== GAME STATE ====================
-        let gameState = {
-            time: 22.0, // 10:00 PM
-            shiftEnd: 6.0,
-            sanity: 100,
-            storeIntegrity: 100,
-            battery: 100,
-            flashlightOn: true,
-            gameOver: false,
-            currentTask: null,
-            completedTasks: 0,
-            player: { 
-                x: 400, 
-                y: 300, 
-                dir: 0,
-                inventory: [],
-                speed: 2
-            },
-            entities: [],
-            items: [],
-            spills: [],
-            aisles: [],
-            aisleSpills: {},
-            lastBatteryDrain: 0,
-            lastSanityDrain: 0,
-            lastTaskSpawn: 0
-        };
-
-        // ==================== CONSTANTS ====================
-        const AISLE_INFO = [
-            { number: 1, name: "Electronics", x: 100, width: 80 },
-            { number: 2, name: "Clothing", x: 200, width: 80 },
-            { number: 3, name: "Cleaning", x: 300, width: 80 },
-            { number: 4, name: "Food", x: 400, width: 80 },
-            { number: 5, name: "Hardware", x: 500, width: 80 },
-            { number: 6, name: "Home Goods", x: 600, width: 80 },
-            { number: 7, name: "Pharmacy", x: 700, width: 80 }
-        ];
-
-        const PA_MESSAGES = [
-            "Cleanup needed in Aisle {AISLE}.",
-            "Spill detected in Aisle {AISLE}. Please clean immediately.",
-            "Customer assistance required in Aisle {AISLE}.",
-            "Restocking needed in Aisle {AISLE}.",
-            "Attention: Maintenance required in Aisle {AISLE}."
-        ];
-
-        // ==================== INITIALIZATION ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log("The Last Shift - Loading...");
-            
-            setTimeout(function() {
-                document.getElementById('loading').style.display = 'none';
-            }, 1000);
-        });
-
-        function startGame() {
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('gameContainer').style.display = 'block';
-            document.getElementById('ui').style.display = 'grid';
-            document.getElementById('controls').style.display = 'grid';
-            
-            initGame();
-        }
-
-        function showTutorial() {
-            document.getElementById('tutorial').style.display = 'block';
-        }
-
-        function hideTutorial() {
-            document.getElementById('tutorial').style.display = 'none';
-            startGame();
-        }
-
-        function showStoreMap() {
-            document.getElementById('storeMap').style.display = 'block';
-        }
-
-        function hideMap() {
-            document.getElementById('storeMap').style.display = 'none';
-        }
-
-        function showTaskTutorial(task) {
-            const tutorial = document.getElementById('taskTutorial');
-            const desc = document.getElementById('taskDescription');
-            desc.textContent = task;
-            tutorial.style.display = 'block';
-            
-            setTimeout(() => {
-                if (tutorial.style.display === 'block') {
-                    tutorial.style.display = 'none';
-                }
-            }, 10000);
-        }
-
-        function hideTaskTutorial() {
-            document.getElementById('taskTutorial').style.display = 'none';
-        }
-
         // ==================== GAME ENGINE ====================
-        function initGame() {
-            console.log("Initializing Mega-Mart...");
-            
-            const canvas = document.getElementById('gameCanvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Initialize store
-            initializeStore();
-            
-            // Spawn initial items
-            spawnInitialItems();
-            
-            // Spawn initial entities
-            spawnInitialEntities();
-            
-            // Create aisle markers
-            createAisleMarkers();
-            
-            // Setup input
-            const keys = {};
-            setupInput(keys);
-            
-            // Start game loop
-            let lastTime = 0;
-            
-            function gameLoop(currentTime) {
-                const deltaTime = currentTime - lastTime || 0;
-                lastTime = currentTime;
+        class DoomEngine {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.minimapCtx = document.getElementById('minimap').getContext('2d');
                 
-                if (!gameState.gameOver) {
-                    updateGame(deltaTime, keys);
-                    drawGame(ctx);
-                    updateUI();
-                }
-                
-                requestAnimationFrame(gameLoop);
-            }
-            
-            gameLoop(0);
-            
-            // First task after 30 seconds
-            setTimeout(() => {
-                spawnRandomTask();
-            }, 30000);
-        }
-
-        function initializeStore() {
-            // Initialize aisles
-            gameState.aisles = AISLE_INFO;
-            gameState.aisleSpills = {};
-            
-            // Create aisle spill locations
-            AISLE_INFO.forEach(aisle => {
-                gameState.aisleSpills[aisle.number] = {
-                    x: aisle.x + 40,
-                    y: 200 + Math.random() * 200,
-                    active: false,
-                    cleaned: false
+                // Game state
+                this.gameState = {
+                    running: true,
+                    player: {
+                        x: 1.5,
+                        y: 1.5,
+                        dir: 0,
+                        planeX: 0,
+                        planeY: 0.66,
+                        health: 100,
+                        maxHealth: 100,
+                        ammo: 50,
+                        maxAmmo: 50,
+                        weapons: ['fist', 'pistol', 'shotgun', 'chaingun'],
+                        currentWeapon: 1,
+                        speed: 0.1,
+                        rotSpeed: 0.05,
+                        height: 0.5,
+                        bob: 0
+                    },
+                    map: [],
+                    textures: {},
+                    sprites: [],
+                    enemies: [],
+                    projectiles: [],
+                    particles: [],
+                    raycast: {
+                        width: this.canvas.width,
+                        height: this.canvas.height
+                    },
+                    keys: {},
+                    mouse: { x: 0, y: 0, sensitivity: 0.003 },
+                    lastTime: 0,
+                    deltaTime: 0,
+                    frame: 0
                 };
-            });
-        }
-
-        function createAisleMarkers() {
-            const markers = document.getElementById('aisleMarkers');
-            markers.innerHTML = '';
-            
-            AISLE_INFO.forEach(aisle => {
-                const marker = document.createElement('div');
-                marker.className = 'aisle-marker';
-                marker.textContent = `AISLE ${aisle.number}`;
-                marker.style.left = `${aisle.x + 20}px`;
-                marker.style.top = '80px';
-                markers.appendChild(marker);
-            });
-        }
-
-        function spawnInitialItems() {
-            // Batteries in electronics aisle
-            for (let i = 0; i < 3; i++) {
-                gameState.items.push({
-                    x: 120 + i * 20,
-                    y: 150,
-                    type: 'battery',
-                    collected: false
-                });
-            }
-            
-            // Soda in food aisle
-            for (let i = 0; i < 3; i++) {
-                gameState.items.push({
-                    x: 420 + i * 20,
-                    y: 150,
-                    type: 'soda',
-                    collected: false
-                });
-            }
-            
-            // Tape in hardware aisle
-            for (let i = 0; i < 2; i++) {
-                gameState.items.push({
-                    x: 520 + i * 20,
-                    y: 150,
-                    type: 'tape',
-                    collected: false
-                });
-            }
-            
-            // Random items throughout store
-            for (let i = 0; i < 10; i++) {
-                const types = ['battery', 'soda', 'tape', 'scanner'];
-                const type = types[Math.floor(Math.random() * types.length)];
                 
-                gameState.items.push({
-                    x: 100 + Math.random() * 600,
-                    y: 100 + Math.random() * 400,
-                    type: type,
-                    collected: false
-                });
-            }
-        }
-
-        function spawnInitialEntities() {
-            // Spawn gatherers in random aisles
-            for (let i = 0; i < 3; i++) {
-                const aisle = AISLE_INFO[Math.floor(Math.random() * AISLE_INFO.length)];
-                gameState.entities.push({
-                    x: aisle.x + 40,
-                    y: 250,
-                    type: 'gatherer',
-                    state: 'wandering',
-                    speed: 0.5,
-                    dir: Math.random() * Math.PI * 2,
-                    basket: []
-                });
-            }
-        }
-
-        function setupInput(keys) {
-            window.addEventListener('keydown', (e) => {
-                const key = e.key.toLowerCase();
-                keys[key] = true;
+                // Textures (we'll generate them)
+                this.textures = {
+                    wall: null,
+                    floor: null,
+                    ceiling: null,
+                    enemy: null,
+                    weapons: {}
+                };
                 
-                // Flashlight toggle
-                if (key === 'f') {
-                    gameState.flashlightOn = !gameState.flashlightOn;
-                    updateDebug(`Flashlight ${gameState.flashlightOn ? 'ON' : 'OFF'}`);
-                }
+                // Initialize
+                this.init();
+            }
+            
+            async init() {
+                console.log("Initializing DOOM Engine...");
                 
-                // Clean action
-                if (key === 'c') {
-                    attemptCleanup();
-                }
+                // Update loading screen
+                this.updateLoading(20);
                 
-                // Barricade/fix
-                if (key === 'l') {
-                    attemptBarricade();
-                }
+                // Generate game world
+                this.generateMap();
+                await this.generateTextures();
                 
-                // PA announcement (attracts entities)
-                if (key === 'p') {
-                    makePAAnnouncement();
-                }
+                this.updateLoading(40);
                 
-                // Pick up item
-                if (key === ' ') {
-                    attemptPickup();
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                keys[e.key.toLowerCase()] = false;
-            });
-        }
-
-        // ==================== GAME UPDATE ====================
-        function updateGame(deltaTime, keys) {
-            const now = Date.now();
-            
-            // Update time (slower progression)
-            gameState.time += deltaTime * 0.00005; // Much slower time progression
-            
-            if (gameState.time >= 24) {
-                gameState.time = 0;
-            }
-            
-            // Check for shift end
-            if (gameState.time >= gameState.shiftEnd && gameState.time < gameState.shiftEnd + 0.1) {
-                endShift(true);
-            }
-            
-            // Update player movement
-            updatePlayer(deltaTime, keys);
-            
-            // Update battery (SLOWER drain)
-            if (gameState.flashlightOn && gameState.battery > 0) {
-                if (now - gameState.lastBatteryDrain > 1000) { // Only drain once per second
-                    gameState.battery = Math.max(0, gameState.battery - 1); // Much slower
-                    gameState.lastBatteryDrain = now;
-                    
-                    if (gameState.battery <= 0) {
-                        gameState.flashlightOn = false;
-                        updateDebug("Battery dead! Flashlight off.");
-                    }
-                }
-            }
-            
-            // Update sanity (BETTER balanced)
-            if (now - gameState.lastSanityDrain > 2000) { // Every 2 seconds
-                let sanityDrain = 0;
+                // Setup input
+                this.setupInput();
                 
-                // Drain in darkness (if flashlight off AND not near store lights)
-                if (!gameState.flashlightOn) {
-                    sanityDrain += 1;
-                }
+                this.updateLoading(60);
                 
-                // Drain from running
-                if (keys['shift']) {
-                    sanityDrain += 2; // Reduced from before
-                }
+                // Spawn enemies
+                this.spawnEnemies();
                 
-                // Drain from being near entities
-                for (const entity of gameState.entities) {
-                    const dist = Math.sqrt(
-                        Math.pow(entity.x - gameState.player.x, 2) +
-                        Math.pow(entity.y - gameState.player.y, 2)
-                    );
-                    if (dist < 100) {
-                        sanityDrain += 1;
-                    }
-                }
+                this.updateLoading(80);
                 
-                // Apply drain
-                gameState.sanity = Math.max(0, gameState.sanity - sanityDrain);
-                gameState.lastSanityDrain = now;
+                // Setup HUD
+                this.setupHUD();
                 
-                // Check for sanity game over
-                if (gameState.sanity <= 0 && !gameState.gameOver) {
-                    endShift(false, "You've lost your mind. Sanity depleted.");
-                }
-            }
-            
-            // Update entities
-            updateEntities(deltaTime);
-            
-            // Update store integrity
-            updateStoreIntegrity();
-            
-            // Random task spawn
-            if (now - gameState.lastTaskSpawn > 60000 && !gameState.currentTask) { // Every 60 seconds
-                spawnRandomTask();
-            }
-            
-            // Check task completion
-            checkTaskCompletion();
-        }
-
-        function updatePlayer(deltaTime, keys) {
-            const speed = keys['shift'] ? 4 : 2;
-            gameState.player.speed = speed;
-            
-            if (keys['w']) {
-                gameState.player.y = Math.max(50, gameState.player.y - speed);
-                gameState.player.dir = -Math.PI / 2;
-            }
-            if (keys['s']) {
-                gameState.player.y = Math.min(550, gameState.player.y + speed);
-                gameState.player.dir = Math.PI / 2;
-            }
-            if (keys['a']) {
-                gameState.player.x = Math.max(50, gameState.player.x - speed);
-                gameState.player.dir = Math.PI;
-            }
-            if (keys['d']) {
-                gameState.player.x = Math.min(750, gameState.player.x + speed);
-                gameState.player.dir = 0;
-            }
-        }
-
-        function updateEntities(deltaTime) {
-            gameState.entities.forEach(entity => {
-                if (entity.type === 'gatherer') {
-                    // Simple wandering AI
-                    entity.dir += (Math.random() - 0.5) * 0.5;
-                    entity.x += Math.cos(entity.dir) * entity.speed;
-                    entity.y += Math.sin(entity.dir) * entity.speed;
-                    
-                    // Keep in bounds
-                    entity.x = Math.max(50, Math.min(750, entity.x));
-                    entity.y = Math.max(100, Math.min(500, entity.y));
-                    
-                    // Check distance to player
-                    const dist = Math.sqrt(
-                        Math.pow(entity.x - gameState.player.x, 2) +
-                        Math.pow(entity.y - gameState.player.y, 2)
-                    );
-                    
-                    if (dist < 80) {
-                        // Move away from player if too close
-                        entity.dir = Math.atan2(
-                            entity.y - gameState.player.y,
-                            entity.x - gameState.player.x
-                        );
-                        entity.state = 'fleeing';
-                        entity.speed = 1.5;
-                    } else if (entity.state === 'fleeing' && dist > 150) {
-                        entity.state = 'wandering';
-                        entity.speed = 0.5;
-                    }
-                }
-            });
-        }
-
-        function updateStoreIntegrity() {
-            // Very slow natural decay
-            if (Math.random() < 0.0001) {
-                gameState.storeIntegrity = Math.max(0, gameState.storeIntegrity - 1);
-            }
-            
-            if (gameState.storeIntegrity <= 0 && !gameState.gameOver) {
-                endShift(false, "Store integrity compromised. Corporate termination.");
-            }
-        }
-
-        // ==================== TASK SYSTEM ====================
-        function spawnRandomTask() {
-            if (gameState.currentTask) return;
-            
-            const aisleNum = Math.floor(Math.random() * 7) + 1;
-            const message = PA_MESSAGES[Math.floor(Math.random() * PA_MESSAGES.length)]
-                .replace("{AISLE}", aisleNum);
-            
-            gameState.currentTask = {
-                aisle: aisleNum,
-                description: message,
-                spawnTime: Date.now()
-            };
-            
-            // Activate spill in that aisle
-            if (gameState.aisleSpills[aisleNum]) {
-                gameState.aisleSpills[aisleNum].active = true;
-                gameState.aisleSpills[aisleNum].cleaned = false;
-            }
-            
-            // Update PA display
-            updatePADisplay(message);
-            
-            // Show tutorial for first task
-            if (gameState.completedTasks === 0) {
-                showTaskTutorial(`PA: ${message} Go to Aisle ${aisleNum} and press C to clean.`);
-            } else {
-                updateDebug(`New task: ${message}`);
-            }
-            
-            gameState.lastTaskSpawn = Date.now();
-        }
-
-        function attemptCleanup() {
-            if (!gameState.currentTask) {
-                updateDebug("No active cleanup task");
-                return;
-            }
-            
-            const taskAisle = gameState.currentTask.aisle;
-            const spill = gameState.aisleSpills[taskAisle];
-            
-            if (!spill || !spill.active || spill.cleaned) {
-                updateDebug("No spill to clean here");
-                return;
-            }
-            
-            // Check if player is near the spill
-            const dist = Math.sqrt(
-                Math.pow(gameState.player.x - spill.x, 2) +
-                Math.pow(gameState.player.y - spill.y, 2)
-            );
-            
-            if (dist < 50) {
-                // Complete the task
-                spill.cleaned = true;
-                spill.active = false;
-                gameState.completedTasks++;
-                gameState.sanity = Math.min(100, gameState.sanity + 10); // Reward
-                gameState.storeIntegrity = Math.min(100, gameState.storeIntegrity + 5);
+                this.updateLoading(100);
                 
-                updateDebug(`Task completed! Sanity +10%, Store +5%`);
-                updatePADisplay("Task completed. Thank you for your diligence.");
-                
-                // Clear current task
-                gameState.currentTask = null;
-                
-                // Spawn next task in 30-60 seconds
+                // Hide loading screen, show game
                 setTimeout(() => {
-                    spawnRandomTask();
-                }, 30000 + Math.random() * 30000);
-            } else {
-                updateDebug(`Go to Aisle ${taskAisle} to clean the spill`);
-            }
-        }
-
-        function checkTaskCompletion() {
-            // Tasks auto-fail after 2 minutes
-            if (gameState.currentTask && Date.now() - gameState.currentTask.spawnTime > 120000) {
-                updateDebug("Task failed: Took too long");
-                gameState.sanity = Math.max(0, gameState.sanity - 15); // Penalty
-                gameState.currentTask = null;
-                
-                // Deactivate spill
-                if (gameState.currentTask) {
-                    const spill = gameState.aisleSpills[gameState.currentTask.aisle];
-                    if (spill) {
-                        spill.active = false;
-                    }
-                }
-            }
-        }
-
-        function attemptBarricade() {
-            // Check if player has tape
-            const hasTape = gameState.player.inventory.some(item => item.type === 'tape');
-            
-            if (!hasTape) {
-                updateDebug("Need duct tape to fix windows");
-                return;
-            }
-            
-            // Check if near a window (edges of store)
-            const nearLeftWindow = gameState.player.x < 50;
-            const nearRightWindow = gameState.player.x > 750;
-            const nearTopWindow = gameState.player.y < 50;
-            const nearBottomWindow = gameState.player.y > 550;
-            
-            if (nearLeftWindow || nearRightWindow || nearTopWindow || nearBottomWindow) {
-                // Use tape
-                const tapeIndex = gameState.player.inventory.findIndex(item => item.type === 'tape');
-                if (tapeIndex > -1) {
-                    gameState.player.inventory.splice(tapeIndex, 1);
-                    gameState.storeIntegrity = Math.min(100, gameState.storeIntegrity + 15);
-                    updateDebug("Window repaired! Store integrity +15%");
-                }
-            } else {
-                updateDebug("Not near a window to repair");
-            }
-        }
-
-        function attemptPickup() {
-            let nearestItem = null;
-            let nearestDist = 40;
-            
-            gameState.items.forEach((item, index) => {
-                if (!item.collected) {
-                    const dist = Math.sqrt(
-                        Math.pow(item.x - gameState.player.x, 2) +
-                        Math.pow(item.y - gameState.player.y, 2)
-                    );
+                    document.getElementById('loadingScreen').style.display = 'none';
+                    document.getElementById('gameContainer').style.display = 'block';
+                    document.getElementById('controls').style.display = 'block';
                     
-                    if (dist < nearestDist) {
-                        nearestDist = dist;
-                        nearestItem = { item, index };
+                    // Start game loop
+                    this.gameLoop();
+                }, 500);
+                
+                // Initial message
+                this.showMessage("HELLFIRE PROTOCOL ACTIVATED", 2000);
+            }
+            
+            updateLoading(percent) {
+                const progress = document.getElementById('loadingProgress');
+                const text = document.getElementById('loadingText');
+                
+                if (progress) progress.style.width = percent + '%';
+                if (text) {
+                    const messages = [
+                        "LOADING DEMONIC INVASION...",
+                        "INITIALIZING BFG...",
+                        "LOADING HELLSPAWN TEXTURES...",
+                        "CALIBRATING RAYCAST ENGINE...",
+                        "ARMING PLASMA RIFLE...",
+                        "READY TO RAZE HELL..."
+                    ];
+                    const index = Math.floor(percent / (100 / messages.length));
+                    text.textContent = messages[Math.min(index, messages.length - 1)];
+                }
+            }
+            
+            generateMap() {
+                // Create a 24x24 map (0 = empty, 1-8 = different wall types)
+                const map = [];
+                const size = 24;
+                
+                // Outer walls
+                for (let x = 0; x < size; x++) {
+                    map[x] = [];
+                    for (let y = 0; y < size; y++) {
+                        if (x === 0 || y === 0 || x === size-1 || y === size-1) {
+                            map[x][y] = Math.floor(Math.random() * 3) + 1; // Random wall type
+                        } else {
+                            map[x][y] = 0; // Empty space
+                        }
                     }
                 }
-            });
-            
-            if (nearestItem) {
-                nearestItem.item.collected = true;
-                gameState.player.inventory.push(nearestItem.item);
                 
-                // Item effects
-                switch(nearestItem.item.type) {
-                    case 'battery':
-                        gameState.battery = Math.min(100, gameState.battery + 40);
-                        updateDebug("Battery collected! Flashlight +40%");
-                        break;
-                    case 'soda':
-                        gameState.sanity = Math.min(100, gameState.sanity + 30);
-                        updateDebug("Sparkle-Cola consumed! Sanity +30%");
-                        break;
-                    case 'tape':
-                        updateDebug("Duct tape collected. Use near windows (L key)");
-                        break;
-                    case 'scanner':
-                        updateDebug("Price scanner collected. Shows entity distances.");
-                        break;
-                }
-            }
-        }
-
-        function makePAAnnouncement() {
-            const messages = [
-                "Cleanup in progress, please avoid the area.",
-                "Store closing soon, please complete your shopping.",
-                "Attention shoppers: special in Aisle 4.",
-                "Employee assistance required at checkout."
-            ];
-            
-            const message = messages[Math.floor(Math.random() * messages.length)];
-            updatePADisplay(`PA: ${message}`);
-            
-            // Attracts nearby entities
-            gameState.entities.forEach(entity => {
-                const dist = Math.sqrt(
-                    Math.pow(entity.x - gameState.player.x, 2) +
-                    Math.pow(entity.y - gameState.player.y, 2)
-                );
-                if (dist < 300) {
-                    entity.dir = Math.atan2(
-                        gameState.player.y - entity.y,
-                        gameState.player.x - entity.x
-                    );
-                    entity.speed = 1;
-                }
-            });
-        }
-
-        // ==================== DRAWING ====================
-        function drawGame(ctx) {
-            // Clear canvas
-            ctx.fillStyle = '#111122';
-            ctx.fillRect(0, 0, 800, 600);
-            
-            // Draw detailed store environment
-            drawStoreEnvironment(ctx);
-            
-            // Draw items
-            drawItems(ctx);
-            
-            // Draw spills (tasks)
-            drawSpills(ctx);
-            
-            // Draw entities
-            drawEntities(ctx);
-            
-            // Draw player
-            drawPlayer(ctx);
-            
-            // Draw lighting effects
-            drawLighting(ctx);
-            
-            // Draw HUD elements
-            drawHUD(ctx);
-        }
-
-        function drawStoreEnvironment(ctx) {
-            // Floor with tile pattern
-            ctx.fillStyle = '#223344';
-            ctx.fillRect(0, 0, 800, 600);
-            
-            // Draw tile grid
-            ctx.strokeStyle = '#334455';
-            ctx.lineWidth = 1;
-            
-            for (let x = 0; x < 800; x += 40) {
-                ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, 600);
-                ctx.stroke();
-            }
-            
-            for (let y = 0; y < 600; y += 40) {
-                ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(800, y);
-                ctx.stroke();
-            }
-            
-            // Draw aisles with shelves
-            AISLE_INFO.forEach(aisle => {
-                // Aisle floor (lighter)
-                ctx.fillStyle = '#334466';
-                ctx.fillRect(aisle.x, 100, aisle.width, 400);
+                // Add rooms and corridors
+                this.createRoom(map, 3, 3, 6, 6);
+                this.createRoom(map, 15, 3, 6, 6);
+                this.createRoom(map, 3, 15, 6, 6);
+                this.createRoom(map, 15, 15, 6, 6);
                 
-                // Shelves (brown)
-                ctx.fillStyle = '#8b4513';
-                ctx.fillRect(aisle.x, 100, aisle.width, 20); // Top shelf
-                ctx.fillRect(aisle.x, 480, aisle.width, 20); // Bottom shelf
+                // Connect rooms
+                this.createCorridor(map, 6, 6, 15, 6);
+                this.createCorridor(map, 6, 6, 6, 15);
                 
-                // Shelf details
-                ctx.fillStyle = '#a0522d';
-                for (let y = 120; y < 480; y += 40) {
-                    ctx.fillRect(aisle.x, y, aisle.width, 4); // Shelves
+                // Add pillars and obstacles
+                for (let i = 0; i < 10; i++) {
+                    const x = Math.floor(Math.random() * (size - 4)) + 2;
+                    const y = Math.floor(Math.random() * (size - 4)) + 2;
+                    if (map[x][y] === 0) {
+                        map[x][y] = Math.floor(Math.random() * 3) + 4;
+                    }
                 }
                 
-                // Aisle number sign
-                ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 16px VT323';
-                ctx.fillText(`AISLE ${aisle.number}`, aisle.x + 10, 70);
-                ctx.fillText(aisle.name, aisle.x + 10, 90);
-            });
-            
-            // Draw checkout counters
-            ctx.fillStyle = '#666666';
-            ctx.fillRect(50, 500, 700, 30);
-            ctx.fillStyle = '#888888';
-            for (let x = 100; x < 700; x += 150) {
-                ctx.fillRect(x, 505, 80, 20); // Individual registers
+                this.gameState.map = map;
+                
+                // Set player start position
+                this.gameState.player.x = 1.5;
+                this.gameState.player.y = 1.5;
             }
             
-            // Draw break room
-            ctx.fillStyle = '#555555';
-            ctx.fillRect(650, 50, 120, 80);
-            ctx.fillStyle = '#777777';
-            ctx.fillRect(660, 60, 40, 20); // Table
-            ctx.fillRect(720, 60, 40, 60); // Vending machine
-            
-            // Draw freezer section
-            ctx.fillStyle = '#aaccff';
-            ctx.fillRect(50, 100, 40, 300);
-            ctx.fillStyle = '#88aaff';
-            ctx.fillRect(52, 102, 36, 296); // Inner freezer
-            
-            // Draw windows
-            ctx.fillStyle = '#334477';
-            ctx.fillRect(0, 0, 800, 10); // Top wall
-            ctx.fillRect(0, 590, 800, 10); // Bottom wall
-            ctx.fillRect(0, 0, 10, 600); // Left wall
-            ctx.fillRect(790, 0, 10, 600); // Right wall
-            
-            // Window details
-            ctx.fillStyle = '#88aaff';
-            for (let y = 150; y < 550; y += 100) {
-                ctx.fillRect(5, y, 5, 40); // Left windows
-                ctx.fillRect(790, y, 5, 40); // Right windows
-            }
-            
-            // Store lights
-            ctx.fillStyle = '#ffffaa';
-            for (let x = 75; x < 800; x += 150) {
-                for (let y = 75; y < 600; y += 150) {
-                    if (Math.random() > 0.05) { // 95% chance to be on
-                        ctx.beginPath();
-                        ctx.arc(x, y, 10, 0, Math.PI * 2);
-                        ctx.fill();
-                        
-                        // Light glow
-                        const gradient = ctx.createRadialGradient(x, y, 5, x, y, 30);
-                        gradient.addColorStop(0, 'rgba(255, 255, 170, 0.8)');
-                        gradient.addColorStop(1, 'rgba(255, 255, 170, 0)');
-                        
-                        ctx.fillStyle = gradient;
-                        ctx.beginPath();
-                        ctx.arc(x, y, 30, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.fillStyle = '#ffffaa';
+            createRoom(map, startX, startY, width, height) {
+                for (let x = startX; x < startX + width; x++) {
+                    for (let y = startY; y < startY + height; y++) {
+                        if (x === startX || y === startY || x === startX + width - 1 || y === startY + height - 1) {
+                            map[x][y] = Math.floor(Math.random() * 3) + 1;
+                        } else {
+                            map[x][y] = 0;
+                        }
                     }
                 }
             }
-        }
-
-        function drawItems(ctx) {
-            gameState.items.forEach(item => {
-                if (!item.collected) {
-                    switch(item.type) {
-                        case 'battery':
-                            ctx.fillStyle = '#ffff00';
-                            ctx.fillRect(item.x - 5, item.y - 8, 10, 16);
-                            ctx.fillStyle = '#ffaa00';
-                            ctx.fillRect(item.x - 3, item.y - 6, 6, 12);
-                            break;
-                        case 'soda':
-                            ctx.fillStyle = '#ff5555';
-                            ctx.fillRect(item.x - 6, item.y - 10, 12, 20);
-                            ctx.fillStyle = '#ff0000';
-                            ctx.fillRect(item.x - 4, item.y - 8, 8, 4);
-                            break;
-                        case 'tape':
-                            ctx.fillStyle = '#888888';
-                            ctx.fillRect(item.x - 7, item.y - 4, 14, 8);
-                            ctx.fillStyle = '#666666';
-                            ctx.fillRect(item.x - 5, item.y - 2, 10, 4);
-                            break;
-                        case 'scanner':
-                            ctx.fillStyle = '#333333';
-                            ctx.fillRect(item.x - 6, item.y - 8, 12, 16);
-                            ctx.fillStyle = '#00ff00';
-                            ctx.fillRect(item.x - 4, item.y - 6, 8, 12);
-                            break;
-                    }
-                    
-                    // Sparkle effect
-                    if (Math.random() > 0.7) {
-                        ctx.fillStyle = '#ffffff';
-                        ctx.beginPath();
-                        ctx.arc(item.x, item.y - 12, 2, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
+            
+            createCorridor(map, startX, startY, endX, endY) {
+                let x = startX;
+                let y = startY;
+                
+                // Horizontal first
+                while (x !== endX) {
+                    map[x][y] = 0;
+                    if (x < endX) x++;
+                    else x--;
                 }
-            });
-        }
-
-        function drawSpills(ctx) {
-            Object.values(gameState.aisleSpills).forEach(spill => {
-                if (spill.active && !spill.cleaned) {
-                    // Animated spill effect
-                    const pulse = Math.sin(Date.now() / 500) * 0.3 + 0.7;
-                    
-                    // Spill puddle
-                    ctx.fillStyle = `rgba(255, 0, 0, ${0.5 * pulse})`;
+                
+                // Then vertical
+                while (y !== endY) {
+                    map[x][y] = 0;
+                    if (y < endY) y++;
+                    else y--;
+                }
+            }
+            
+            async generateTextures() {
+                // Generate wall textures
+                this.textures.wall = this.createWallTexture();
+                this.textures.floor = this.createFloorTexture();
+                this.textures.ceiling = this.createCeilingTexture();
+                this.textures.enemy = this.createEnemyTexture();
+                
+                // Generate weapon textures
+                this.textures.weapons.pistol = this.createPistolTexture();
+                this.textures.weapons.shotgun = this.createShotgunTexture();
+                this.textures.weapons.chaingun = this.createChaingunTexture();
+            }
+            
+            createWallTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                
+                // Stone wall pattern
+                const gradient = ctx.createLinearGradient(0, 0, 256, 256);
+                gradient.addColorStop(0, '#444444');
+                gradient.addColorStop(0.5, '#666666');
+                gradient.addColorStop(1, '#444444');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 256, 256);
+                
+                // Add stone details
+                ctx.strokeStyle = '#333333';
+                ctx.lineWidth = 2;
+                
+                // Vertical lines
+                for (let x = 0; x < 256; x += 32) {
                     ctx.beginPath();
-                    ctx.arc(spill.x, spill.y, 20, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // Spill outline
-                    ctx.strokeStyle = '#ff0000';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.arc(spill.x, spill.y, 22, 0, Math.PI * 2);
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, 256);
                     ctx.stroke();
-                    
-                    // Clean here indicator
-                    ctx.fillStyle = '#ffff00';
-                    ctx.font = 'bold 14px VT323';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('CLEAN HERE', spill.x, spill.y - 30);
                 }
-            });
-        }
-
-        function drawEntities(ctx) {
-            gameState.entities.forEach(entity => {
-                if (entity.type === 'gatherer') {
-                    // Body (purple uniform)
-                    ctx.fillStyle = entity.state === 'fleeing' ? '#ff5555' : '#8b46c7';
-                    ctx.fillRect(entity.x - 8, entity.y - 12, 16, 24);
-                    
-                    // Head
-                    ctx.fillStyle = '#663399';
-                    ctx.fillRect(entity.x - 4, entity.y - 16, 8, 8);
-                    
-                    // Shopping basket
-                    ctx.fillStyle = '#8b4513';
-                    ctx.fillRect(entity.x + 6, entity.y - 8, 6, 10);
-                    
-                    // Movement indicator
-                    if (entity.state === 'fleeing') {
-                        ctx.strokeStyle = '#ff0000';
-                        ctx.lineWidth = 2;
+                
+                // Horizontal lines
+                for (let y = 0; y < 256; y += 32) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(256, y);
+                    ctx.stroke();
+                }
+                
+                // Add some grunge
+                ctx.fillStyle = '#222222';
+                for (let i = 0; i < 50; i++) {
+                    const x = Math.random() * 256;
+                    const y = Math.random() * 256;
+                    const size = Math.random() * 10 + 5;
+                    ctx.fillRect(x, y, size, size);
+                }
+                
+                return canvas;
+            }
+            
+            createFloorTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                
+                // Metal floor pattern
+                ctx.fillStyle = '#333333';
+                ctx.fillRect(0, 0, 256, 256);
+                
+                // Hexagonal pattern
+                ctx.strokeStyle = '#555555';
+                ctx.lineWidth = 1;
+                
+                const size = 32;
+                for (let y = 0; y < 256; y += size) {
+                    for (let x = 0; x < 256; x += size) {
                         ctx.beginPath();
-                        ctx.moveTo(entity.x, entity.y);
-                        ctx.lineTo(
-                            entity.x + Math.cos(entity.dir) * 20,
-                            entity.y + Math.sin(entity.dir) * 20
-                        );
+                        ctx.moveTo(x + size/2, y);
+                        ctx.lineTo(x + size, y + size/3);
+                        ctx.lineTo(x + size, y + 2*size/3);
+                        ctx.lineTo(x + size/2, y + size);
+                        ctx.lineTo(x, y + 2*size/3);
+                        ctx.lineTo(x, y + size/3);
+                        ctx.closePath();
                         ctx.stroke();
                     }
                 }
-            });
-        }
-
-        function drawPlayer(ctx) {
-            // Player body (blue uniform)
-            ctx.fillStyle = '#6b8cff';
-            ctx.fillRect(gameState.player.x - 8, gameState.player.y - 12, 16, 24);
+                
+                // Add some blood stains
+                ctx.fillStyle = '#8b0000';
+                for (let i = 0; i < 10; i++) {
+                    const x = Math.random() * 256;
+                    const y = Math.random() * 256;
+                    const radius = Math.random() * 15 + 5;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                return canvas;
+            }
             
-            // Player head
-            ctx.fillStyle = '#ffcc99';
-            ctx.fillRect(gameState.player.x - 4, gameState.player.y - 16, 8, 8);
+            createCeilingTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const ctx = canvas.getContext('2d');
+                
+                // Dark ceiling with pipes
+                ctx.fillStyle = '#111111';
+                ctx.fillRect(0, 0, 256, 256);
+                
+                // Pipes
+                ctx.strokeStyle = '#444444';
+                ctx.lineWidth = 8;
+                
+                ctx.beginPath();
+                ctx.moveTo(50, 50);
+                ctx.lineTo(200, 50);
+                ctx.stroke();
+                
+                ctx.beginPath();
+                ctx.moveTo(50, 150);
+                ctx.lineTo(200, 150);
+                ctx.stroke();
+                
+                // Pipe connections
+                ctx.strokeStyle = '#666666';
+                ctx.lineWidth = 4;
+                
+                for (let x = 60; x < 200; x += 30) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 50);
+                    ctx.lineTo(x, 150);
+                    ctx.stroke();
+                }
+                
+                return canvas;
+            }
             
-            // Direction indicator
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            const dirX = gameState.player.x + Math.cos(gameState.player.dir) * 15;
-            const dirY = gameState.player.y + Math.sin(gameState.player.dir) * 15;
-            ctx.moveTo(gameState.player.x, gameState.player.y);
-            ctx.lineTo(dirX, dirY);
-            ctx.stroke();
-            
-            // Inventory indicator
-            if (gameState.player.inventory.length > 0) {
+            createEnemyTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                
+                // Demon sprite
+                ctx.fillStyle = '#8b0000';
+                ctx.fillRect(0, 0, 128, 128);
+                
+                // Body
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.ellipse(64, 64, 40, 50, 0, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Eyes
                 ctx.fillStyle = '#ffff00';
                 ctx.beginPath();
-                ctx.arc(gameState.player.x, gameState.player.y - 20, 3, 0, Math.PI * 2);
+                ctx.arc(48, 50, 8, 0, Math.PI * 2);
+                ctx.arc(80, 50, 8, 0, Math.PI * 2);
                 ctx.fill();
-            }
-        }
-
-        function drawLighting(ctx) {
-            // Flashlight effect
-            if (gameState.flashlightOn && gameState.battery > 0) {
-                const gradient = ctx.createRadialGradient(
-                    gameState.player.x, gameState.player.y, 10,
-                    gameState.player.x, gameState.player.y, 200
-                );
                 
-                const intensity = gameState.battery / 100;
-                gradient.addColorStop(0, `rgba(255, 255, 200, ${0.3 * intensity})`);
-                gradient.addColorStop(0.5, `rgba(255, 255, 150, ${0.1 * intensity})`);
-                gradient.addColorStop(1, 'rgba(255, 255, 100, 0)');
-                
-                ctx.fillStyle = gradient;
+                // Mouth
+                ctx.fillStyle = '#000000';
                 ctx.beginPath();
+                ctx.arc(64, 80, 20, 0, Math.PI);
+                ctx.fill();
                 
-                const angle = gameState.player.dir;
-                const width = Math.PI / 3;
-                ctx.moveTo(gameState.player.x, gameState.player.y);
-                ctx.arc(gameState.player.x, gameState.player.y, 200, angle - width/2, angle + width/2);
+                // Horns
+                ctx.fillStyle = '#444444';
+                ctx.beginPath();
+                ctx.moveTo(40, 20);
+                ctx.lineTo(30, 10);
+                ctx.lineTo(40, 30);
                 ctx.closePath();
                 ctx.fill();
+                
+                ctx.beginPath();
+                ctx.moveTo(88, 20);
+                ctx.lineTo(98, 10);
+                ctx.lineTo(88, 30);
+                ctx.closePath();
+                ctx.fill();
+                
+                return canvas;
             }
             
-            // Emergency lights (red, flickering)
-            ctx.fillStyle = Math.random() > 0.2 ? '#ff0000' : '#aa0000';
-            for (let i = 0; i < 8; i++) {
-                ctx.beginPath();
-                ctx.arc(50 + i * 100, 30, 10, 0, Math.PI * 2);
-                ctx.fill();
+            createPistolTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 200;
+                const ctx = canvas.getContext('2d');
+                
+                // Clear background
+                ctx.clearRect(0, 0, 400, 200);
+                
+                // Gun metal color
+                const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+                gradient.addColorStop(0, '#333333');
+                gradient.addColorStop(0.5, '#666666');
+                gradient.addColorStop(1, '#333333');
+                
+                // Pistol body
+                ctx.fillStyle = gradient;
+                ctx.fillRect(100, 80, 200, 40);
+                ctx.fillRect(250, 70, 80, 60);
+                
+                // Barrel
+                ctx.fillRect(320, 85, 50, 30);
+                
+                // Grip
+                ctx.fillStyle = '#222222';
+                ctx.fillRect(120, 120, 60, 60);
+                
+                // Details
+                ctx.strokeStyle = '#111111';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(100, 80, 200, 40);
+                ctx.strokeRect(250, 70, 80, 60);
+                
+                // Sight
+                ctx.fillStyle = '#ffff00';
+                ctx.fillRect(310, 75, 4, 8);
+                
+                return canvas;
             }
-        }
-
-        function drawHUD(ctx) {
-            // Current task indicator
-            if (gameState.currentTask) {
-                const spill = gameState.aisleSpills[gameState.currentTask.aisle];
-                if (spill && spill.active) {
-                    // Draw arrow pointing to task
-                    const angle = Math.atan2(
-                        spill.y - gameState.player.y,
-                        spill.x - gameState.player.x
-                    );
+            
+            createShotgunTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 200;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.clearRect(0, 0, 400, 200);
+                
+                // Shotgun body
+                ctx.fillStyle = '#444444';
+                ctx.fillRect(50, 60, 300, 50);
+                
+                // Barrel
+                ctx.fillStyle = '#222222';
+                ctx.fillRect(320, 65, 80, 40);
+                
+                // Pump
+                ctx.fillStyle = '#333333';
+                ctx.fillRect(180, 110, 120, 20);
+                
+                // Stock
+                ctx.fillStyle = '#8b4513';
+                ctx.fillRect(50, 110, 100, 60);
+                
+                // Details
+                ctx.strokeStyle = '#111111';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(50, 60, 300, 50);
+                
+                return canvas;
+            }
+            
+            createChaingunTexture() {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400;
+                canvas.height = 200;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.clearRect(0, 0, 400, 200);
+                
+                // Chaingun body
+                ctx.fillStyle = '#222222';
+                ctx.fillRect(50, 70, 300, 60);
+                
+                // Multiple barrels
+                ctx.fillStyle = '#111111';
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillRect(320, 70 + i*15, 60, 10);
+                }
+                
+                // Ammo chain
+                ctx.fillStyle = '#666666';
+                for (let i = 0; i < 10; i++) {
+                    ctx.beginPath();
+                    ctx.arc(80 + i*20, 130, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Handle
+                ctx.fillStyle = '#333333';
+                ctx.fillRect(200, 130, 40, 50);
+                
+                return canvas;
+            }
+            
+            spawnEnemies() {
+                const enemyCount = 10;
+                
+                for (let i = 0; i < enemyCount; i++) {
+                    let x, y;
                     
-                    const distance = Math.sqrt(
-                        Math.pow(spill.x - gameState.player.x, 2) +
-                        Math.pow(spill.y - gameState.player.y, 2)
-                    );
+                    // Find empty spot
+                    do {
+                        x = Math.floor(Math.random() * 20) + 2;
+                        y = Math.floor(Math.random() * 20) + 2;
+                    } while (this.gameState.map[x][y] !== 0 || 
+                            (x < 3 && y < 3)); // Not too close to player
                     
-                    if (distance > 100) {
-                        const arrowX = gameState.player.x + Math.cos(angle) * 50;
-                        const arrowY = gameState.player.y + Math.sin(angle) * 50;
-                        
-                        ctx.fillStyle = '#ffff00';
-                        ctx.beginPath();
-                        ctx.moveTo(arrowX, arrowY);
-                        ctx.lineTo(arrowX - 10, arrowY - 5);
-                        ctx.lineTo(arrowX - 10, arrowY + 5);
-                        ctx.closePath();
-                        ctx.fill();
-                        
-                        ctx.fillStyle = '#ffff00';
-                        ctx.font = '12px VT323';
-                        ctx.textAlign = 'center';
-                        ctx.fillText(`${Math.floor(distance)}m`, arrowX, arrowY - 10);
-                    }
+                    this.gameState.enemies.push({
+                        x: x + 0.5,
+                        y: y + 0.5,
+                        type: 'imp',
+                        health: 100,
+                        maxHealth: 100,
+                        speed: 0.03,
+                        attackRange: 3,
+                        attackDamage: 10,
+                        attackCooldown: 0,
+                        lastAttack: 0,
+                        state: 'idle', // idle, chasing, attacking
+                        sprite: this.textures.enemy
+                    });
                 }
             }
-        }
-
-        // ==================== UI FUNCTIONS ====================
-        function updateUI() {
-            // Update meters
-            updateMeter('sanityFill', 'sanityValue', gameState.sanity);
-            updateMeter('batteryFill', 'batteryValue', gameState.battery);
-            updateMeter('storeFill', 'storeValue', gameState.storeIntegrity);
             
-            // Update time
-            const hours = Math.floor(gameState.time);
-            const minutes = Math.floor((gameState.time - hours) * 60);
-            const ampm = hours >= 12 ? 'PM' : 'AM';
-            const displayHour = hours > 12 ? hours - 12 : hours;
-            document.getElementById('timeDisplay').textContent = 
-                `SHIFT: ${displayHour}:${minutes.toString().padStart(2, '0')} ${ampm}`;
-            
-            // Update objectives
-            const objDisplay = document.getElementById('objectiveDisplay');
-            if (gameState.currentTask) {
-                objDisplay.innerHTML = `
-                    <strong>PRIMARY:</strong> Survive until 6:00 AM<br>
-                    <strong style="color:#ffff00">ACTIVE TASK:</strong> ${gameState.currentTask.description}<br>
-                    <small>Go to Aisle ${gameState.currentTask.aisle} and press C</small>
-                `;
-            } else {
-                objDisplay.innerHTML = `
-                    <strong>PRIMARY OBJECTIVE:</strong><br>
-                    Survive until 6:00 AM<br>
-                    <strong>ACTIVE TASK:</strong> None - waiting for next assignment
-                `;
+            setupInput() {
+                // Keyboard input
+                window.addEventListener('keydown', (e) => {
+                    this.gameState.keys[e.key.toLowerCase()] = true;
+                    
+                    // Weapon switching
+                    if (e.key >= '1' && e.key <= '4') {
+                        const weaponIndex = parseInt(e.key) - 1;
+                        if (weaponIndex < this.gameState.player.weapons.length) {
+                            this.gameState.player.currentWeapon = weaponIndex;
+                            this.updateWeaponDisplay();
+                        }
+                    }
+                    
+                    // Reload
+                    if (e.key === 'r' && this.gameState.player.ammo < this.gameState.player.maxAmmo) {
+                        this.gameState.player.ammo = this.gameState.player.maxAmmo;
+                        this.updateHUD();
+                    }
+                    
+                    // Jump (simple implementation)
+                    if (e.key === ' ') {
+                        this.gameState.player.height = 1.0;
+                        setTimeout(() => {
+                            this.gameState.player.height = 0.5;
+                        }, 300);
+                    }
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    this.gameState.keys[e.key.toLowerCase()] = false;
+                });
+                
+                // Mouse input
+                this.canvas.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) { // Left click
+                        this.shoot();
+                    }
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    const centerX = rect.left + this.canvas.width / 2;
+                    const centerY = rect.top + this.canvas.height / 2;
+                    
+                    // Calculate mouse movement
+                    const deltaX = e.clientX - centerX;
+                    
+                    // Rotate player
+                    this.gameState.player.dir += deltaX * this.gameState.mouse.sensitivity;
+                    
+                    // Reset mouse to center
+                    if (document.pointerLockElement === this.canvas || 
+                        this.canvas.requestPointerLock) {
+                        // Using pointer lock
+                    } else {
+                        // Manual centering
+                        e.target.style.cursor = 'none';
+                        const fakeEvent = new MouseEvent('mousemove', {
+                            clientX: centerX,
+                            clientY: centerY
+                        });
+                        document.dispatchEvent(fakeEvent);
+                    }
+                });
+                
+                // Request pointer lock
+                this.canvas.addEventListener('click', () => {
+                    if (this.canvas.requestPointerLock) {
+                        this.canvas.requestPointerLock();
+                    }
+                });
+                
+                // Handle pointer lock change
+                document.addEventListener('pointerlockchange', () => {
+                    if (document.pointerLockElement === this.canvas) {
+                        // Pointer locked
+                    }
+                });
             }
             
-            // Update inventory display in debug
-            const invCounts = {};
-            gameState.player.inventory.forEach(item => {
-                invCounts[item.type] = (invCounts[item.type] || 0) + 1;
-            });
-            
-            const invText = Object.entries(invCounts)
-                .map(([type, count]) => `${type}: ${count}`)
-                .join(', ');
-            
-            if (invText) {
-                updateDebug(`Inventory: ${invText} | Tasks: ${gameState.completedTasks}`);
+            setupHUD() {
+                this.updateHUD();
+                this.updateWeaponDisplay();
             }
-        }
-
-        function updateMeter(fillId, valueId, percent) {
-            const fill = document.getElementById(fillId);
-            const value = document.getElementById(valueId);
             
-            if (fill && value) {
-                fill.style.width = percent + '%';
-                value.textContent = Math.floor(percent) + '%';
+            updateHUD() {
+                const healthPercent = (this.gameState.player.health / this.gameState.player.maxHealth) * 100;
+                document.getElementById('healthFill').style.width = healthPercent + '%';
+                document.getElementById('healthText').textContent = 
+                    `HEALTH: ${Math.floor(this.gameState.player.health)}`;
+                document.getElementById('ammo').textContent = 
+                    this.gameState.player.ammo.toString().padStart(2, '0');
             }
-        }
-
-        function updatePADisplay(message) {
-            const paDisplay = document.getElementById('paDisplay');
-            if (paDisplay) {
-                paDisplay.textContent = `PA: ${message}`;
-                paDisplay.style.animation = 'none';
-                setTimeout(() => {
-                    paDisplay.style.animation = 'pulse 0.5s 3';
-                }, 10);
+            
+            updateWeaponDisplay() {
+                const weaponElement = document.getElementById('weapon');
+                const weaponName = this.gameState.player.weapons[this.gameState.player.currentWeapon];
+                const texture = this.textures.weapons[weaponName];
+                
+                if (texture) {
+                    weaponElement.style.backgroundImage = `url(${texture.toDataURL()})`;
+                    weaponElement.style.backgroundSize = 'contain';
+                    weaponElement.style.backgroundRepeat = 'no-repeat';
+                    weaponElement.style.backgroundPosition = 'center';
+                }
             }
-        }
-
-        function updateDebug(message) {
-            const debug = document.getElementById('debug');
-            if (debug) {
-                debug.textContent = message;
+            
+            shoot() {
+                if (this.gameState.player.ammo <= 0) {
+                    // Dry fire sound/effect
+                    return;
+                }
+                
+                // Use ammo
+                this.gameState.player.ammo--;
+                
+                // Weapon fire animation
+                const weaponElement = document.getElementById('weapon');
+                weaponElement.classList.remove('fire');
+                void weaponElement.offsetWidth; // Trigger reflow
+                weaponElement.classList.add('fire');
+                
+                // Check if we hit an enemy
+                const fov = Math.PI / 3; // Field of view
+                const rayAngle = this.gameState.player.dir;
+                
+                // Simple raycast for hit detection
+                let hitEnemy = null;
+                let closestDistance = Infinity;
+                
+                for (const enemy of this.gameState.enemies) {
+                    if (enemy.health <= 0) continue;
+                    
+                    // Calculate angle to enemy
+                    const dx = enemy.x - this.gameState.player.x;
+                    const dy = enemy.y - this.gameState.player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const angleToEnemy = Math.atan2(dy, dx);
+                    
+                    // Check if enemy is within FOV
+                    let angleDiff = angleToEnemy - rayAngle;
+                    
+                    // Normalize angle
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    if (Math.abs(angleDiff) < fov / 2 && distance < 10) {
+                        if (distance < closestDistance) {
+                            closestDistance = distance;
+                            hitEnemy = enemy;
+                        }
+                    }
+                }
+                
+                // Damage enemy if hit
+                if (hitEnemy) {
+                    const damage = this.getWeaponDamage(this.gameState.player.currentWeapon);
+                    hitEnemy.health -= damage;
+                    
+                    // Blood particle effect
+                    this.createBloodParticles(hitEnemy.x, hitEnemy.y);
+                    
+                    // Check if enemy died
+                    if (hitEnemy.health <= 0) {
+                        this.createDeathParticles(hitEnemy.x, hitEnemy.y);
+                        this.showMessage("DEMON SLAIN", 1000);
+                    }
+                }
+                
+                // Muzzle flash particles
+                this.createMuzzleFlash();
+                
+                // Update HUD
+                this.updateHUD();
+                
+                // Play sound (simulated)
+                this.playSound('gunshot');
+            }
+            
+            getWeaponDamage(weaponIndex) {
+                switch(weaponIndex) {
+                    case 0: return 20; // Fist
+                    case 1: return 25; // Pistol
+                    case 2: return 50; // Shotgun
+                    case 3: return 15; // Chaingun (per bullet)
+                    default: return 10;
+                }
+            }
+            
+            createBloodParticles(x, y) {
+                for (let i = 0; i < 20; i++) {
+                    this.gameState.particles.push({
+                        x: x,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 0.2,
+                        vy: (Math.random() - 0.5) * 0.2,
+                        life: 1.0,
+                        color: '#ff0000',
+                        size: Math.random() * 0.1 + 0.05,
+                        type: 'blood'
+                    });
+                }
+            }
+            
+            createDeathParticles(x, y) {
+                for (let i = 0; i < 50; i++) {
+                    this.gameState.particles.push({
+                        x: x,
+                        y: y,
+                        vx: (Math.random() - 0.5) * 0.3,
+                        vy: (Math.random() - 0.5) * 0.3,
+                        life: 1.5,
+                        color: '#8b0000',
+                        size: Math.random() * 0.2 + 0.1,
+                        type: 'death'
+                    });
+                }
+            }
+            
+            createMuzzleFlash() {
+                for (let i = 0; i < 10; i++) {
+                    const angle = this.gameState.player.dir + (Math.random() - 0.5) * 0.5;
+                    const distance = 0.3;
+                    
+                    this.gameState.particles.push({
+                        x: this.gameState.player.x + Math.cos(angle) * distance,
+                        y: this.gameState.player.y + Math.sin(angle) * distance,
+                        vx: Math.cos(angle) * 0.5,
+                        vy: Math.sin(angle) * 0.5,
+                        life: 0.3,
+                        color: '#ffff00',
+                        size: Math.random() * 0.2 + 0.1,
+                        type: 'muzzle'
+                    });
+                }
+            }
+            
+            playSound(soundName) {
+                // In a real implementation, you would play actual sounds
+                console.log(`Playing sound: ${soundName}`);
+            }
+            
+            showMessage(text, duration) {
+                const messageElement = document.getElementById('message');
+                messageElement.textContent = text;
+                messageElement.style.opacity = 1;
                 
                 setTimeout(() => {
-                    if (debug.textContent === message) {
-                        debug.textContent = `Shift active. ${gameState.completedTasks} tasks completed.`;
-                    }
-                }, 5000);
+                    messageElement.style.opacity = 0;
+                }, duration);
             }
-        }
-
-        // ==================== GAME END ====================
-        function endShift(success, message) {
-            gameState.gameOver = true;
             
-            const hoursSurvived = ((gameState.time - 22 + 24) % 24).toFixed(1);
-            const score = Math.floor(
-                gameState.sanity * 0.5 +
-                gameState.storeIntegrity * 0.3 +
-                gameState.completedTasks * 20 +
-                hoursSurvived * 10
-            );
+            update(deltaTime) {
+                if (!this.gameState.running) return;
+                
+                // Update player movement
+                this.updatePlayerMovement(deltaTime);
+                
+                // Update enemies
+                this.updateEnemies(deltaTime);
+                
+                // Update particles
+                this.updateParticles(deltaTime);
+                
+                // Update player bobbing (head bob effect)
+                this.gameState.player.bob += deltaTime * 10;
+                
+                // Check player health
+                if (this.gameState.player.health <= 0) {
+                    this.gameOver();
+                }
+            }
             
-            if (success) {
-                const winMessage = `
-                    SHIFT COMPLETE!
-                    
-                    You survived until 6:00 AM!
-                    
-                    FINAL STATS:
-                    Sanity: ${Math.floor(gameState.sanity)}%
-                    Battery: ${Math.floor(gameState.battery)}%
-                    Store Integrity: ${Math.floor(gameState.storeIntegrity)}%
-                    Tasks Completed: ${gameState.completedTasks}
-                    Hours Survived: ${hoursSurvived}
-                    
-                    PERFORMANCE SCORE: ${score}
-                    
-                    The fog lifts... for now.
-                    Corporate will review your performance.
-                    
-                    Press R to work another shift.
-                `;
-                alert(winMessage);
-            } else {
-                const loseMessage = `
-                    GAME OVER
-                    
-                    ${message}
-                    
-                    FINAL STATS:
-                    Shift Duration: ${hoursSurvived} hours
-                    Sanity: ${Math.floor(gameState.sanity)}%
-                    Store: ${Math.floor(gameState.storeIntegrity)}%
-                    Tasks: ${gameState.completedTasks}
-                    
-                    SCORE: ${score}
-                    
-                    Press R to try again.
-                `;
-                alert(loseMessage);
-            }
-        }
-
-        // Restart on R press
-        window.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'r' && gameState.gameOver) {
-                document.location.reload();
-            }
-        });
-    </script>
-</body>
-</html>
+            updatePlayerMovement(deltaTime) {
+                const player = this.gameState.player;
+                const speed = player.speed * deltaTime * 60;
+                const rotSpeed = player.rotSpeed * deltaTime * 60;
+                
+                // Rotation
+                if (this.gameState.keys['q']) player.dir -= rotSpeed;
+                if (this.gameState.keys['e']) player.dir += rotSpeed;
+                
+                // Movement
+                let moveX = 0;
+                let moveY = 0;
+                
+                if (this.gameState.keys['w']) {
+                    moveX += Math.cos(player.dir) * speed;
+                    moveY += Math.sin(player.dir) * speed;
+                }
+                if (this.gameState.keys['s']) {
+                    moveX -= Math.cos(player.dir) * speed;
+                    moveY -= Math.sin(player.dir) * speed;
+                }
+                if (this.gameState.keys['a']) {
+                    moveX += Math.cos(player.dir - Math.PI/2) * speed;
+                    moveY += Math.sin(player.dir - Math.PI/2) * speed;
+                }
+                if (this.gameState.keys['d']) {
+                    moveX += Math.cos(player.dir + Math.PI/2) * speed;
+                    moveY += Math.sin(player.dir + Math.PI/2) * speed;
+                }
+                
+                // Running
+                if (this.gameState.keys['shift']) {
+                    moveX *= 1.5;
+                    move
