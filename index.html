@@ -1078,4 +1078,471 @@
                 // Running
                 if (this.gameState.keys['shift']) {
                     moveX *= 1.5;
-                    move
+                    moveY *= 1.5;
+                }
+                
+                // Collision detection
+                const newX = player.x + moveX;
+                const newY = player.y + moveY;
+                
+                if (this.canMoveTo(newX, player.y)) {
+                    player.x = newX;
+                }
+                if (this.canMoveTo(player.x, newY)) {
+                    player.y = newY;
+                }
+                
+                // Update camera plane for FOV
+                player.planeX = Math.cos(player.dir + Math.PI/2) * 0.66;
+                player.planeY = Math.sin(player.dir + Math.PI/2) * 0.66;
+            }
+            
+            canMoveTo(x, y) {
+                const mapX = Math.floor(x);
+                const mapY = Math.floor(y);
+                
+                // Check bounds
+                if (mapX < 0 || mapX >= this.gameState.map.length ||
+                    mapY < 0 || mapY >= this.gameState.map[0].length) {
+                    return false;
+                }
+                
+                // Check wall collision
+                return this.gameState.map[mapX][mapY] === 0;
+            }
+            
+            updateEnemies(deltaTime) {
+                const currentTime = Date.now();
+                
+                for (const enemy of this.gameState.enemies) {
+                    if (enemy.health <= 0) continue;
+                    
+                    // Calculate distance to player
+                    const dx = this.gameState.player.x - enemy.x;
+                    const dy = this.gameState.player.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    // Update enemy state
+                    if (distance < enemy.attackRange) {
+                        enemy.state = 'attacking';
+                        
+                        // Attack if cooldown is over
+                        if (currentTime - enemy.lastAttack > 1000) { // 1 second cooldown
+                            this.gameState.player.health -= enemy.attackDamage;
+                            enemy.lastAttack = currentTime;
+                            
+                            // Damage flash effect
+                            document.body.classList.add('damage');
+                            setTimeout(() => {
+                                document.body.classList.remove('damage');
+                            }, 300);
+                            
+                            this.updateHUD();
+                        }
+                    } else if (distance < 10) {
+                        enemy.state = 'chasing';
+                        
+                        // Move toward player
+                        const angle = Math.atan2(dy, dx);
+                        enemy.x += Math.cos(angle) * enemy.speed * deltaTime * 60;
+                        enemy.y += Math.sin(angle) * enemy.speed * deltaTime * 60;
+                    } else {
+                        enemy.state = 'idle';
+                    }
+                }
+                
+                // Remove dead enemies
+                this.gameState.enemies = this.gameState.enemies.filter(enemy => enemy.health > 0);
+            }
+            
+            updateParticles(deltaTime) {
+                for (let i = this.gameState.particles.length - 1; i >= 0; i--) {
+                    const particle = this.gameState.particles[i];
+                    
+                    // Update position
+                    particle.x += particle.vx * deltaTime * 60;
+                    particle.y += particle.vy * deltaTime * 60;
+                    
+                    // Update life
+                    particle.life -= deltaTime;
+                    
+                    // Remove dead particles
+                    if (particle.life <= 0) {
+                        this.gameState.particles.splice(i, 1);
+                    }
+                }
+            }
+            
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Raycast rendering
+                this.renderWalls();
+                
+                // Render floor and ceiling
+                this.renderFloorAndCeiling();
+                
+                // Render sprites (enemies, items)
+                this.renderSprites();
+                
+                // Render particles
+                this.renderParticles();
+                
+                // Draw minimap
+                this.drawMinimap();
+            }
+            
+            renderWalls() {
+                const { player, map } = this.gameState;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
+                
+                for (let x = 0; x < width; x++) {
+                    // Calculate ray position and direction
+                    const cameraX = 2 * x / width - 1;
+                    const rayDirX = player.dir + player.planeX * cameraX;
+                    const rayDirY = player.planeY * cameraX;
+                    
+                    // Which box of the map we're in
+                    let mapX = Math.floor(player.x);
+                    let mapY = Math.floor(player.y);
+                    
+                    // Length of ray from current position to next x or y-side
+                    let deltaDistX = Math.abs(1 / rayDirX);
+                    let deltaDistY = Math.abs(1 / rayDirY);
+                    
+                    let perpWallDist;
+                    
+                    // What direction to step in x or y-direction (either +1 or -1)
+                    let stepX, stepY;
+                    
+                    // Length of ray from one x or y-side to next x or y-side
+                    let sideDistX, sideDistY;
+                    
+                    // Calculate step and initial sideDist
+                    if (rayDirX < 0) {
+                        stepX = -1;
+                        sideDistX = (player.x - mapX) * deltaDistX;
+                    } else {
+                        stepX = 1;
+                        sideDistX = (mapX + 1.0 - player.x) * deltaDistX;
+                    }
+                    
+                    if (rayDirY < 0) {
+                        stepY = -1;
+                        sideDistY = (player.y - mapY) * deltaDistY;
+                    } else {
+                        stepY = 1;
+                        sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
+                    }
+                    
+                    // Perform DDA (Digital Differential Analysis)
+                    let hit = 0; // Was there a wall hit?
+                    let side; // Was a NS or a EW wall hit?
+                    
+                    while (hit === 0) {
+                        // Jump to next map square, OR in x-direction, OR in y-direction
+                        if (sideDistX < sideDistY) {
+                            sideDistX += deltaDistX;
+                            mapX += stepX;
+                            side = 0;
+                        } else {
+                            sideDistY += deltaDistY;
+                            mapY += stepY;
+                            side = 1;
+                        }
+                        
+                        // Check if ray has hit a wall
+                        if (mapX >= 0 && mapX < map.length && 
+                            mapY >= 0 && mapY < map[0].length) {
+                            if (map[mapX][mapY] > 0) hit = 1;
+                        } else {
+                            hit = 1; // Hit boundary
+                        }
+                    }
+                    
+                    // Calculate distance projected on camera direction
+                    if (side === 0) {
+                        perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
+                    } else {
+                        perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
+                    }
+                    
+                    // Calculate height of line to draw on screen
+                    const lineHeight = Math.floor(height / perpWallDist);
+                    
+                    // Calculate lowest and highest pixel to fill in current stripe
+                    let drawStart = -lineHeight / 2 + height / 2;
+                    if (drawStart < 0) drawStart = 0;
+                    let drawEnd = lineHeight / 2 + height / 2;
+                    if (drawEnd >= height) drawEnd = height - 1;
+                    
+                    // Choose wall color based on map value and side
+                    let color;
+                    const wallType = map[mapX][mapY];
+                    
+                    switch(wallType) {
+                        case 1: color = side === 0 ? '#ff4444' : '#cc4444'; break;
+                        case 2: color = side === 0 ? '#44ff44' : '#44cc44'; break;
+                        case 3: color = side === 0 ? '#4444ff' : '#4444cc'; break;
+                        case 4: color = side === 0 ? '#ffff44' : '#cccc44'; break;
+                        case 5: color = side === 0 ? '#ff44ff' : '#cc44cc'; break;
+                        default: color = side === 0 ? '#888888' : '#666666';
+                    }
+                    
+                    // Darken color based on distance
+                    const darkness = Math.min(1.0, perpWallDist / 10);
+                    const rgb = this.hexToRgb(color);
+                    const darkened = {
+                        r: Math.floor(rgb.r * (1 - darkness * 0.7)),
+                        g: Math.floor(rgb.g * (1 - darkness * 0.7)),
+                        b: Math.floor(rgb.b * (1 - darkness * 0.7))
+                    };
+                    
+                    // Draw the wall slice
+                    this.ctx.fillStyle = `rgb(${darkened.r}, ${darkened.g}, ${darkened.b})`;
+                    this.ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+                    
+                    // Draw floor and ceiling for this slice
+                    this.drawFloorCeilingSlice(x, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY);
+                }
+            }
+            
+            drawFloorCeilingSlice(x, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY) {
+                const { player } = this.gameState;
+                const height = this.canvas.height;
+                
+                // Draw floor
+                for (let y = drawEnd; y < height; y++) {
+                    // Current y position compared to the center of the screen
+                    const currentDist = height / (2.0 * y - height);
+                    
+                    const weight = currentDist / perpWallDist;
+                    
+                    const currentFloorX = weight * player.x + (1.0 - weight) * player.x;
+                    const currentFloorY = weight * player.y + (1.0 - weight) * player.y;
+                    
+                    const floorTexX = Math.floor(currentFloorX * 64) % 64;
+                    const floorTexY = Math.floor(currentFloorY * 64) % 64;
+                    
+                    // Get floor color from texture
+                    const floorData = this.textures.floor.getContext('2d')
+                        .getImageData(floorTexX * 4, floorTexY * 4, 1, 1).data;
+                    
+                    // Darken based on distance
+                    const darkness = Math.min(0.8, currentDist / 15);
+                    this.ctx.fillStyle = `rgba(${floorData[0]}, ${floorData[1]}, ${floorData[2]}, ${1 - darkness})`;
+                    this.ctx.fillRect(x, y, 1, 1);
+                    
+                    // Draw ceiling (mirror of floor)
+                    const ceilingY = height - y;
+                    const ceilingData = this.textures.ceiling.getContext('2d')
+                        .getImageData(floorTexX * 4, floorTexY * 4, 1, 1).data;
+                    
+                    this.ctx.fillStyle = `rgba(${ceilingData[0]}, ${ceilingData[1]}, ${ceilingData[2]}, ${1 - darkness * 0.5})`;
+                    this.ctx.fillRect(x, ceilingY, 1, 1);
+                }
+            }
+            
+            renderSprites() {
+                // Sort sprites by distance (painter's algorithm)
+                const sprites = [...this.gameState.enemies].map(enemy => {
+                    const dx = enemy.x - this.gameState.player.x;
+                    const dy = enemy.y - this.gameState.player.y;
+                    return {
+                        ...enemy,
+                        distance: dx * dx + dy * dy
+                    };
+                }).sort((a, b) => b.distance - a.distance);
+                
+                // Render each sprite
+                for (const sprite of sprites) {
+                    if (sprite.health <= 0) continue;
+                    
+                    // Translate sprite position to relative to camera
+                    const spriteX = sprite.x - this.gameState.player.x;
+                    const spriteY = sprite.y - this.gameState.player.y;
+                    
+                    // Transform sprite with the inverse camera matrix
+                    const invDet = 1.0 / (this.gameState.player.planeX * Math.sin(this.gameState.player.dir) - 
+                                          Math.cos(this.gameState.player.dir) * this.gameState.player.planeY);
+                    
+                    const transformX = invDet * (Math.sin(this.gameState.player.dir) * spriteX - 
+                                                Math.cos(this.gameState.player.dir) * spriteY);
+                    const transformY = invDet * (-this.gameState.player.planeY * spriteX + 
+                                                this.gameState.player.planeX * spriteY);
+                    
+                    if (transformY > 0) { // Sprite is in front of camera
+                        const spriteScreenX = Math.floor((this.canvas.width / 2) * (1 + transformX / transformY));
+                        
+                        // Calculate height of the sprite on screen
+                        const spriteHeight = Math.abs(Math.floor(this.canvas.height / transformY));
+                        
+                        // Calculate lowest and highest pixel to fill in current stripe
+                        const drawStartY = -spriteHeight / 2 + this.canvas.height / 2;
+                        const drawEndY = spriteHeight / 2 + this.canvas.height / 2;
+                        
+                        // Calculate width of the sprite
+                        const spriteWidth = Math.abs(Math.floor(this.canvas.height / transformY));
+                        const drawStartX = -spriteWidth / 2 + spriteScreenX;
+                        const drawEndX = spriteWidth / 2 + spriteScreenX;
+                        
+                        // Draw sprite
+                        if (sprite.sprite) {
+                            this.ctx.drawImage(
+                                sprite.sprite,
+                                drawStartX, drawStartY,
+                                spriteWidth, spriteHeight
+                            );
+                        }
+                        
+                        // Draw health bar above sprite
+                        if (sprite.health < sprite.maxHealth) {
+                            const healthPercent = sprite.health / sprite.maxHealth;
+                            const barWidth = spriteWidth * 0.8;
+                            const barHeight = 5;
+                            const barX = drawStartX + spriteWidth * 0.1;
+                            const barY = drawStartY - 10;
+                            
+                            // Background
+                            this.ctx.fillStyle = '#000000';
+                            this.ctx.fillRect(barX, barY, barWidth, barHeight);
+                            
+                            // Health
+                            this.ctx.fillStyle = '#ff0000';
+                            this.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+                        }
+                    }
+                }
+            }
+            
+            renderParticles() {
+                for (const particle of this.gameState.particles) {
+                    // Transform particle to screen space
+                    const dx = particle.x - this.gameState.player.x;
+                    const dy = particle.y - this.gameState.player.y;
+                    
+                    const invDet = 1.0 / (this.gameState.player.planeX * Math.sin(this.gameState.player.dir) - 
+                                          Math.cos(this.gameState.player.dir) * this.gameState.player.planeY);
+                    
+                    const transformX = invDet * (Math.sin(this.gameState.player.dir) * dx - 
+                                                Math.cos(this.gameState.player.dir) * dy);
+                    const transformY = invDet * (-this.gameState.player.planeY * dx + 
+                                                this.gameState.player.planeX * dy);
+                    
+                    if (transformY > 0) {
+                        const screenX = Math.floor((this.canvas.width / 2) * (1 + transformX / transformY));
+                        const screenY = Math.floor(this.canvas.height / 2);
+                        
+                        const size = Math.max(1, particle.size * 100 / transformY);
+                        
+                        this.ctx.fillStyle = particle.color;
+                        this.ctx.globalAlpha = particle.life;
+                        this.ctx.beginPath();
+                        this.ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
+                        this.ctx.fill();
+                        this.ctx.globalAlpha = 1.0;
+                    }
+                }
+            }
+            
+            drawMinimap() {
+                const ctx = this.minimapCtx;
+                const map = this.gameState.map;
+                const cellSize = 200 / map.length;
+                
+                // Clear minimap
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, 200, 200);
+                
+                // Draw walls
+                for (let x = 0; x < map.length; x++) {
+                    for (let y = 0; y < map[0].length; y++) {
+                        if (map[x][y] > 0) {
+                            ctx.fillStyle = '#666666';
+                            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                            
+                            ctx.strokeStyle = '#444444';
+                            ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                        }
+                    }
+                }
+                
+                // Draw player
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.arc(
+                    this.gameState.player.x * cellSize,
+                    this.gameState.player.y * cellSize,
+                    cellSize / 2,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+                
+                // Draw player direction
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(
+                    this.gameState.player.x * cellSize,
+                    this.gameState.player.y * cellSize
+                );
+                ctx.lineTo(
+                    (this.gameState.player.x + Math.cos(this.gameState.player.dir) * 2) * cellSize,
+                    (this.gameState.player.y + Math.sin(this.gameState.player.dir) * 2) * cellSize
+                );
+                ctx.stroke();
+                
+                // Draw enemies
+                for (const enemy of this.gameState.enemies) {
+                    if (enemy.health > 0) {
+                        ctx.fillStyle = enemy.health < 50 ? '#ff8800' : '#ff0000';
+                        ctx.beginPath();
+                        ctx.arc(enemy.x * cellSize, enemy.y * cellSize, cellSize / 2, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+            
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : { r: 0, g: 0, b: 0 };
+            }
+            
+            gameOver() {
+                this.gameState.running = false;
+                this.showMessage("YOU DIED", 3000);
+                
+                setTimeout(() => {
+                    if (confirm("HELLFIRE PROTOCOL FAILED\n\nTry again?")) {
+                        document.location.reload();
+                    }
+                }, 3000);
+            }
+            
+            gameLoop() {
+                const currentTime = Date.now();
+                this.gameState.deltaTime = (currentTime - this.gameState.lastTime) / 1000;
+                this.gameState.lastTime = currentTime;
+                
+                if (this.gameState.running) {
+                    this.update(this.gameState.deltaTime);
+                    this.draw();
+                    this.gameState.frame++;
+                }
+                
+                requestAnimationFrame(() => this.gameLoop());
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            window.game = new DoomEngine();
+        });
+    </script>
+</body>
+</html>
