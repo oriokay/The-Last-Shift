@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOOM 1993 Clone - Working Raycasting</title>
+    <title>DOOM Clone - Optimized Performance</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
         
         * {
             margin: 0;
@@ -41,8 +41,7 @@
 
         #gameContainer {
             position: relative;
-            border: 3px solid #ff0000;
-            box-shadow: 0 0 30px #ff0000;
+            border: 2px solid #ff0000;
             background: #000;
             display: none;
         }
@@ -53,76 +52,29 @@
         }
 
         .menu-title {
-            font-size: 72px;
+            font-size: 48px;
             color: #ff0000;
-            margin-bottom: 30px;
-            text-shadow: 0 0 20px #ff0000;
-            animation: pulse 2s infinite;
-        }
-
-        .menu-subtitle {
-            font-size: 24px;
-            color: #ff6666;
-            margin-bottom: 50px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #ff0000;
         }
 
         .menu-button {
             background: #220000;
             color: #ff0000;
             border: 2px solid #ff0000;
-            padding: 15px 40px;
-            margin: 10px;
-            font-size: 24px;
+            padding: 12px 30px;
+            margin: 8px;
+            font-size: 18px;
             font-family: 'Orbitron', sans-serif;
             cursor: pointer;
-            width: 300px;
+            width: 250px;
             text-align: center;
-            transition: all 0.3s;
+            transition: all 0.2s;
         }
 
         .menu-button:hover {
             background: #ff0000;
             color: #000;
-            transform: scale(1.05);
-            box-shadow: 0 0 20px #ff0000;
-        }
-
-        #settingsPanel {
-            display: none;
-            background: rgba(0, 0, 0, 0.9);
-            border: 3px solid #ff0000;
-            padding: 30px;
-            margin-top: 20px;
-            width: 400px;
-        }
-
-        .setting-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 15px 0;
-            color: #ff6666;
-        }
-
-        .setting-label {
-            font-size: 18px;
-        }
-
-        .setting-slider {
-            width: 200px;
-            background: #220000;
-            height: 10px;
-            -webkit-appearance: none;
-            appearance: none;
-        }
-
-        .setting-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #ff0000;
-            cursor: pointer;
         }
 
         #hud {
@@ -130,12 +82,11 @@
             top: 0;
             left: 0;
             width: 100%;
-            padding: 20px;
+            padding: 10px;
             color: #ff0000;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
-            text-shadow: 0 0 5px #000;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(0, 0, 0, 0.7);
             display: flex;
             justify-content: space-between;
         }
@@ -145,8 +96,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             background: #ff0000;
             border: 1px solid #ffffff;
             pointer-events: none;
@@ -154,69 +105,22 @@
 
         #controlsHelp {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: #888888;
-            font-size: 14px;
-            line-height: 1.5;
+            bottom: 10px;
+            left: 10px;
+            color: #888;
+            font-size: 12px;
             background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border: 1px solid #444444;
+            padding: 8px;
+            border: 1px solid #444;
         }
 
-        #pauseMenu {
+        #fpsCounter {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.95);
-            border: 3px solid #ff0000;
-            padding: 40px;
-            text-align: center;
-            display: none;
-            z-index: 100;
-        }
-
-        .pause-title {
-            color: #ff0000;
-            font-size: 36px;
-            margin-bottom: 30px;
-        }
-
-        #howToPlayPanel {
-            display: none;
-            background: rgba(0, 0, 0, 0.9);
-            border: 3px solid #ff0000;
-            padding: 30px;
-            margin-top: 20px;
-            width: 600px;
-            color: #ff6666;
-            text-align: left;
-        }
-
-        .controls-list {
-            margin: 20px 0;
-        }
-
-        .control-item {
-            margin: 10px 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .control-key {
-            background: #220000;
-            color: #ff0000;
-            padding: 5px 10px;
-            margin-right: 10px;
-            border: 1px solid #ff0000;
-            min-width: 80px;
-            text-align: center;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+            top: 10px;
+            right: 10px;
+            color: #0f0;
+            font-size: 12px;
+            font-family: monospace;
         }
     </style>
 </head>
@@ -224,132 +128,42 @@
     <!-- Main Menu -->
     <div id="menuScreen">
         <div class="menu-title">DOOM CLONE</div>
-        <div class="menu-subtitle">Hell Awaits...</div>
-        
         <button class="menu-button" onclick="startGame()">START GAME</button>
-        <button class="menu-button" onclick="showSettings()">SETTINGS</button>
         <button class="menu-button" onclick="showHowToPlay()">HOW TO PLAY</button>
-        <button class="menu-button" onclick="showCredits()">CREDITS</button>
-        
-        <!-- Settings Panel -->
-        <div id="settingsPanel">
-            <h3 style="color: #ff0000; margin-bottom: 20px;">SETTINGS</h3>
-            
-            <div class="setting-row">
-                <div class="setting-label">Mouse Sensitivity</div>
-                <input type="range" min="1" max="100" value="20" class="setting-slider" id="sensitivitySlider">
-                <span id="sensitivityValue">20</span>
-            </div>
-            
-            <div class="setting-row">
-                <div class="setting-label">Enemy Damage</div>
-                <input type="range" min="1" max="50" value="10" class="setting-slider" id="damageSlider">
-                <span id="damageValue">10</span>
-            </div>
-            
-            <div class="setting-row">
-                <div class="setting-label">Player Speed</div>
-                <input type="range" min="50" max="200" value="100" class="setting-slider" id="speedSlider">
-                <span id="speedValue">100</span>
-            </div>
-            
-            <div class="setting-row">
-                <div class="setting-label">Volume</div>
-                <input type="range" min="0" max="100" value="70" class="setting-slider" id="volumeSlider">
-                <span id="volumeValue">70</span>
-            </div>
-            
-            <button class="menu-button" onclick="saveSettings()" style="margin-top: 20px; width: 100%;">SAVE & BACK</button>
-        </div>
-        
-        <!-- How to Play Panel -->
-        <div id="howToPlayPanel">
-            <h3 style="color: #ff0000; margin-bottom: 20px;">HOW TO PLAY</h3>
-            
-            <div class="controls-list">
-                <div class="control-item">
-                    <div class="control-key">W A S D</div>
-                    <div>Move Forward/Backward/Left/Right</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">MOUSE</div>
-                    <div>Aim and Look Around</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">LEFT CLICK</div>
-                    <div>Shoot Weapon</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">R</div>
-                    <div>Reload Weapon</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">1-4</div>
-                    <div>Switch Weapons</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">SHIFT</div>
-                    <div>Sprint (Uses Stamina)</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">SPACE</div>
-                    <div>Jump</div>
-                </div>
-                <div class="control-item">
-                    <div class="control-key">ESC</div>
-                    <div>Pause Menu</div>
-                </div>
-            </div>
-            
-            <h4 style="color: #ff6666; margin: 20px 0 10px 0;">GAME OBJECTIVES:</h4>
-            <p>1. Survive as long as possible against demon hordes</p>
-            <p>2. Kill all enemies in each area to progress</p>
-            <p>3. Find keys to unlock new areas</p>
-            <p>4. Collect health packs and ammo</p>
-            <p>5. Watch your health and ammo - run out and you die!</p>
-            
-            <button class="menu-button" onclick="backToMenu()" style="margin-top: 20px; width: 100%;">BACK TO MENU</button>
+        <div id="howToPlay" style="display: none; margin-top: 20px; color: #ff6666; max-width: 500px;">
+            <h3>CONTROLS:</h3>
+            <p>WASD - Move</p>
+            <p>Mouse - Look</p>
+            <p>Left Click - Shoot</p>
+            <p>R - Reload</p>
+            <p>1-4 - Switch Weapons</p>
+            <p>ESC - Pause</p>
+            <button class="menu-button" onclick="hideHowToPlay()" style="margin-top: 10px;">BACK</button>
         </div>
     </div>
     
     <!-- Game Container -->
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="600"></canvas>
-        
         <div id="hud">
             <div id="healthDisplay">HEALTH: 100</div>
             <div id="ammoDisplay">AMMO: 50</div>
-            <div id="weaponDisplay">WEAPON: PISTOL</div>
-            <div id="enemyDisplay">ENEMIES: 3</div>
+            <div id="weaponDisplay">PISTOL</div>
         </div>
-        
         <div id="crosshair"></div>
-        
-        <div id="controlsHelp">
-            WASD: Move | Mouse: Aim | LMB: Shoot | R: Reload | 1-4: Weapons | ESC: Pause
-        </div>
-        
-        <!-- Pause Menu -->
-        <div id="pauseMenu">
-            <div class="pause-title">GAME PAUSED</div>
-            <button class="menu-button" onclick="resumeGame()">RESUME</button>
-            <button class="menu-button" onclick="showSettingsInGame()">SETTINGS</button>
-            <button class="menu-button" onclick="restartGame()">RESTART</button>
-            <button class="menu-button" onclick="quitToMenu()">QUIT TO MENU</button>
-        </div>
+        <div id="controlsHelp">WASD: Move | Mouse: Look | LMB: Shoot | ESC: Pause</div>
+        <div id="fpsCounter">FPS: 0</div>
     </div>
 
     <script>
-        // ==================== GAME SETTINGS ====================
-        const settings = {
-            mouseSensitivity: 0.002,
-            enemyDamage: 10,
-            playerSpeed: 0.08,
-            volume: 0.7
-        };
-
-        // ==================== GAME STATE ====================
-        let game = {
+        // ==================== OPTIMIZED GAME ENGINE ====================
+        const Game = {
+            // Performance settings
+            RAY_COUNT: 400, // Reduced from 800 for better performance
+            FOV: Math.PI / 3,
+            WALL_HEIGHT: 64,
+            
+            // Game state
             running: false,
             paused: false,
             player: {
@@ -357,259 +171,232 @@
                 y: 1.5,
                 angle: 0,
                 health: 100,
-                maxHealth: 100,
                 ammo: 50,
-                maxAmmo: 50,
                 weapon: 1,
-                weapons: ['FIST', 'PISTOL', 'SHOTGUN', 'CHAIN GUN'],
-                speed: settings.playerSpeed,
-                stamina: 100
+                speed: 0.08,
+                moveX: 0,
+                moveY: 0
             },
-            map: [],
+            
+            // Optimized map (smaller for performance)
+            map: [
+                [1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,1],
+                [1,0,1,0,1,0,1],
+                [1,0,0,0,0,0,1],
+                [1,0,1,0,1,0,1],
+                [1,0,0,0,0,0,1],
+                [1,1,1,1,1,1,1]
+            ],
+            
             enemies: [],
             keys: {},
-            mouse: { x: 0, y: 0, locked: false },
-            lastTime: 0,
+            mouse: { x: 0, locked: false },
             canvas: null,
-            ctx: null
-        };
-
-        // ==================== MENU FUNCTIONS ====================
-        function startGame() {
-            document.getElementById('menuScreen').style.display = 'none';
-            document.getElementById('gameContainer').style.display = 'block';
+            ctx: null,
+            lastTime: 0,
+            fps: 0,
+            frameCount: 0,
+            lastFpsUpdate: 0,
             
-            initGame();
-        }
-
-        function showSettings() {
-            document.getElementById('settingsPanel').style.display = 'block';
-            document.getElementById('howToPlayPanel').style.display = 'none';
+            // Pre-calculated values for performance
+            cosTable: [],
+            sinTable: [],
+            tanTable: [],
             
-            // Set slider values
-            document.getElementById('sensitivitySlider').value = settings.mouseSensitivity * 10000;
-            document.getElementById('damageSlider').value = settings.enemyDamage;
-            document.getElementById('speedSlider').value = settings.playerSpeed * 1000;
-            document.getElementById('volumeSlider').value = settings.volume * 100;
+            // Texture cache
+            wallColors: ['#8b4513', '#a0522d', '#654321'],
             
-            updateSliderValues();
-        }
-
-        function showSettingsInGame() {
-            document.getElementById('pauseMenu').style.display = 'none';
-            showSettings();
-        }
-
-        function showHowToPlay() {
-            document.getElementById('howToPlayPanel').style.display = 'block';
-            document.getElementById('settingsPanel').style.display = 'none';
-        }
-
-        function showCredits() {
-            alert("DOOM CLONE\n\nCreated with JavaScript\nInspired by DOOM (1993)\n\nControls: WASD + Mouse\nObjective: Survive!");
-        }
-
-        function backToMenu() {
-            document.getElementById('settingsPanel').style.display = 'none';
-            document.getElementById('howToPlayPanel').style.display = 'none';
-        }
-
-        function updateSliderValues() {
-            document.getElementById('sensitivityValue').textContent = Math.round(settings.mouseSensitivity * 10000);
-            document.getElementById('damageValue').textContent = settings.enemyDamage;
-            document.getElementById('speedValue').textContent = Math.round(settings.playerSpeed * 1000);
-            document.getElementById('volumeValue').textContent = Math.round(settings.volume * 100);
-        }
-
-        function saveSettings() {
-            settings.mouseSensitivity = document.getElementById('sensitivitySlider').value / 10000;
-            settings.enemyDamage = parseInt(document.getElementById('damageSlider').value);
-            settings.playerSpeed = document.getElementById('speedSlider').value / 1000;
-            settings.volume = document.getElementById('volumeSlider').value / 100;
-            
-            if (game.running) {
-                game.player.speed = settings.playerSpeed;
-                resumeGame();
-            } else {
-                backToMenu();
-            }
-        }
-
-        // ==================== GAME FUNCTIONS ====================
-        function initGame() {
-            console.log("Initializing DOOM clone...");
-            
-            game.canvas = document.getElementById('gameCanvas');
-            game.ctx = game.canvas.getContext('2d');
-            
-            // Generate a simple but visible map
-            generateMap();
-            
-            // Spawn enemies
-            spawnEnemies();
-            
-            // Setup input
-            setupInput();
-            
-            // Update HUD
-            updateHUD();
-            
-            // Start game loop
-            game.running = true;
-            game.lastTime = performance.now();
-            gameLoop();
-        }
-
-        function generateMap() {
-            // Simple 10x10 map that's easy to see
-            game.map = [
-                [1,1,1,1,1,1,1,1,1,1],
-                [1,0,0,0,0,0,0,0,0,1],
-                [1,0,1,0,1,0,1,0,0,1],
-                [1,0,0,0,0,0,0,0,0,1],
-                [1,0,1,0,1,0,1,0,0,1],
-                [1,0,0,0,0,0,0,0,0,1],
-                [1,0,1,0,1,0,1,0,0,1],
-                [1,0,0,0,0,0,0,0,0,1],
-                [1,0,0,0,0,0,0,0,0,1],
-                [1,1,1,1,1,1,1,1,1,1]
-            ];
-            
-            // Set player start position
-            game.player.x = 1.5;
-            game.player.y = 1.5;
-            game.player.angle = 0;
-        }
-
-        function spawnEnemies() {
-            game.enemies = [];
-            
-            // Spawn enemies in open areas
-            game.enemies.push({ x: 5.5, y: 5.5, health: 100, type: 'IMP', speed: 0.02 });
-            game.enemies.push({ x: 3.5, y: 3.5, health: 100, type: 'IMP', speed: 0.02 });
-            game.enemies.push({ x: 7.5, y: 7.5, health: 100, type: 'IMP', speed: 0.02 });
-            
-            updateEnemyDisplay();
-        }
-
-        function setupInput() {
-            // Keyboard input
-            window.addEventListener('keydown', (e) => {
-                const key = e.key.toLowerCase();
-                game.keys[key] = true;
+            init() {
+                console.log("Initializing optimized game...");
                 
-                // Weapon switching
-                if (key >= '1' && key <= '4') {
-                    const weaponIndex = parseInt(key) - 1;
-                    if (weaponIndex < game.player.weapons.length) {
-                        game.player.weapon = weaponIndex;
-                        updateWeaponDisplay();
-                    }
-                }
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
                 
-                // Reload
-                if (key === 'r') {
-                    game.player.ammo = game.player.maxAmmo;
-                    updateAmmoDisplay();
-                }
+                // Pre-calculate trig tables for performance
+                this.precalculateTrigTables();
                 
-                // Pause
-                if (key === 'escape') {
-                    if (game.paused) {
-                        resumeGame();
-                    } else {
-                        pauseGame();
-                    }
-                    e.preventDefault();
-                }
-            });
-            
-            window.addEventListener('keyup', (e) => {
-                game.keys[e.key.toLowerCase()] = false;
-            });
-            
-            // Mouse input
-            game.canvas.addEventListener('mousedown', (e) => {
-                if (e.button === 0) { // Left click
-                    shoot();
-                }
+                // Generate enemies
+                this.generateEnemies();
                 
-                // Request pointer lock
-                if (!game.mouse.locked) {
-                    game.canvas.requestPointerLock = game.canvas.requestPointerLock || 
-                                                   game.canvas.mozRequestPointerLock ||
-                                                   game.canvas.webkitRequestPointerLock;
-                    if (game.canvas.requestPointerLock) {
-                        game.canvas.requestPointerLock();
-                    }
-                }
-            });
+                // Setup input
+                this.setupInput();
+                
+                // Start game
+                this.running = true;
+                this.gameLoop(performance.now());
+            },
             
-            // Mouse movement with sensitivity
-            document.addEventListener('mousemove', (e) => {
-                if (document.pointerLockElement === game.canvas && game.running && !game.paused) {
-                    const sensitivity = settings.mouseSensitivity;
-                    game.player.angle += e.movementX * sensitivity;
+            precalculateTrigTables() {
+                // Pre-calculate trig values for all angles (0-360 degrees in 1-degree increments)
+                const steps = 360;
+                for (let i = 0; i < steps; i++) {
+                    const angle = (i * Math.PI) / 180;
+                    this.cosTable[i] = Math.cos(angle);
+                    this.sinTable[i] = Math.sin(angle);
+                    this.tanTable[i] = Math.tan(angle);
+                }
+            },
+            
+            fastCos(angle) {
+                const index = Math.round((angle * 180 / Math.PI) % 360);
+                return this.cosTable[index < 0 ? index + 360 : index];
+            },
+            
+            fastSin(angle) {
+                const index = Math.round((angle * 180 / Math.PI) % 360);
+                return this.sinTable[index < 0 ? index + 360 : index];
+            },
+            
+            generateEnemies() {
+                this.enemies = [
+                    { x: 3.5, y: 3.5, health: 100, speed: 0.02 },
+                    { x: 4.5, y: 4.5, health: 100, speed: 0.02 },
+                    { x: 2.5, y: 2.5, health: 100, speed: 0.02 }
+                ];
+            },
+            
+            setupInput() {
+                // Keyboard
+                window.addEventListener('keydown', (e) => {
+                    const key = e.key.toLowerCase();
+                    this.keys[key] = true;
                     
-                    // Keep angle normalized
-                    if (game.player.angle > Math.PI * 2) game.player.angle -= Math.PI * 2;
-                    if (game.player.angle < 0) game.player.angle += Math.PI * 2;
+                    // Movement
+                    switch(key) {
+                        case 'w': this.player.moveY = -1; break;
+                        case 's': this.player.moveY = 1; break;
+                        case 'a': this.player.moveX = -1; break;
+                        case 'd': this.player.moveX = 1; break;
+                        case 'r': this.player.ammo = 50; this.updateHUD(); break;
+                        case 'escape': this.togglePause(); break;
+                    }
+                    
+                    // Weapons
+                    if (key >= '1' && key <= '4') {
+                        this.player.weapon = parseInt(key) - 1;
+                        this.updateHUD();
+                    }
+                });
+                
+                window.addEventListener('keyup', (e) => {
+                    const key = e.key.toLowerCase();
+                    this.keys[key] = false;
+                    
+                    switch(key) {
+                        case 'w': case 's': this.player.moveY = 0; break;
+                        case 'a': case 'd': this.player.moveX = 0; break;
+                    }
+                });
+                
+                // Mouse
+                this.canvas.addEventListener('mousedown', (e) => {
+                    if (e.button === 0) {
+                        this.shoot();
+                    }
+                    
+                    // Request pointer lock
+                    if (!this.mouse.locked && this.canvas.requestPointerLock) {
+                        this.canvas.requestPointerLock();
+                    }
+                });
+                
+                // Mouse movement with fixed sensitivity
+                document.addEventListener('mousemove', (e) => {
+                    if (document.pointerLockElement === this.canvas && this.running && !this.paused) {
+                        const sensitivity = 0.002;
+                        this.player.angle += e.movementX * sensitivity;
+                    }
+                });
+            },
+            
+            update(deltaTime) {
+                if (this.paused) return;
+                
+                // Update player movement
+                this.updatePlayer(deltaTime);
+                
+                // Update enemies
+                this.updateEnemies(deltaTime);
+                
+                // Update HUD
+                this.updateHUD();
+            },
+            
+            updatePlayer(deltaTime) {
+                const speed = this.player.speed * deltaTime * 60;
+                
+                // Calculate movement vector
+                let moveX = this.player.moveX;
+                let moveY = this.player.moveY;
+                
+                // Normalize diagonal movement
+                if (moveX !== 0 && moveY !== 0) {
+                    const length = Math.sqrt(moveX * moveX + moveY * moveY);
+                    moveX /= length;
+                    moveY /= length;
                 }
-            });
+                
+                // Apply movement with collision
+                const newX = this.player.x + moveX * speed;
+                const newY = this.player.y + moveY * speed;
+                
+                if (this.canMoveTo(newX, this.player.y)) {
+                    this.player.x = newX;
+                }
+                if (this.canMoveTo(this.player.x, newY)) {
+                    this.player.y = newY;
+                }
+            },
             
-            // Pointer lock change
-            document.addEventListener('pointerlockchange', () => {
-                game.mouse.locked = document.pointerLockElement === game.canvas;
-            });
-        }
-
-        function updateHUD() {
-            document.getElementById('healthDisplay').textContent = 
-                `HEALTH: ${Math.max(0, game.player.health)}`;
-            document.getElementById('ammoDisplay').textContent = 
-                `AMMO: ${game.player.ammo}/${game.player.maxAmmo}`;
-            document.getElementById('weaponDisplay').textContent = 
-                `WEAPON: ${game.player.weapons[game.player.weapon]}`;
+            canMoveTo(x, y) {
+                const mapX = Math.floor(x);
+                const mapY = Math.floor(y);
+                
+                return this.map[mapX] && this.map[mapX][mapY] === 0;
+            },
             
-            const aliveEnemies = game.enemies.filter(e => e.health > 0).length;
-            document.getElementById('enemyDisplay').textContent = 
-                `ENEMIES: ${aliveEnemies}`;
-        }
-
-        function updateAmmoDisplay() {
-            document.getElementById('ammoDisplay').textContent = 
-                `AMMO: ${game.player.ammo}/${game.player.maxAmmo}`;
-        }
-
-        function updateWeaponDisplay() {
-            document.getElementById('weaponDisplay').textContent = 
-                `WEAPON: ${game.player.weapons[game.player.weapon]}`;
-        }
-
-        function updateEnemyDisplay() {
-            const aliveEnemies = game.enemies.filter(e => e.health > 0).length;
-            document.getElementById('enemyDisplay').textContent = 
-                `ENEMIES: ${aliveEnemies}`;
-        }
-
-        function shoot() {
-            if (game.player.ammo <= 0 || game.paused) return;
+            updateEnemies(deltaTime) {
+                for (const enemy of this.enemies) {
+                    if (enemy.health <= 0) continue;
+                    
+                    // Move toward player
+                    const dx = this.player.x - enemy.x;
+                    const dy = this.player.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance > 0.5 && distance < 10) {
+                        const angle = Math.atan2(dy, dx);
+                        enemy.x += Math.cos(angle) * enemy.speed * deltaTime * 60;
+                        enemy.y += Math.sin(angle) * enemy.speed * deltaTime * 60;
+                    }
+                    
+                    // Attack if close
+                    if (distance < 1.5) {
+                        this.player.health -= 0.5;
+                        if (this.player.health <= 0) {
+                            this.gameOver();
+                        }
+                    }
+                }
+            },
             
-            game.player.ammo--;
-            updateAmmoDisplay();
-            
-            // Simple hit detection
-            for (let i = 0; i < game.enemies.length; i++) {
-                const enemy = game.enemies[i];
-                if (enemy.health > 0) {
-                    // Check if enemy is in front of player
-                    const dx = enemy.x - game.player.x;
-                    const dy = enemy.y - game.player.y;
+            shoot() {
+                if (this.player.ammo <= 0 || this.paused) return;
+                
+                this.player.ammo--;
+                
+                // Check for hits
+                for (const enemy of this.enemies) {
+                    if (enemy.health <= 0) continue;
+                    
+                    const dx = enemy.x - this.player.x;
+                    const dy = enemy.y - this.player.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     const angleToEnemy = Math.atan2(dy, dx);
                     
-                    // Check if enemy is within FOV and range
-                    let angleDiff = angleToEnemy - game.player.angle;
+                    // Check if enemy is in front of player
+                    let angleDiff = angleToEnemy - this.player.angle;
                     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                     while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
                     
@@ -618,477 +405,321 @@
                         if (enemy.health <= 0) {
                             console.log("Enemy killed!");
                         }
-                        updateEnemyDisplay();
                         break;
                     }
                 }
-            }
-        }
-
-        function updatePlayer(deltaTime) {
-            if (game.paused) return;
-            
-            const speed = game.player.speed * deltaTime * 60;
-            const rotSpeed = 0.05 * deltaTime * 60;
-            
-            // Rotation
-            if (game.keys['q']) game.player.angle -= rotSpeed;
-            if (game.keys['e']) game.player.angle += rotSpeed;
-            
-            // Movement
-            let moveX = 0;
-            let moveY = 0;
-            
-            if (game.keys['w']) {
-                moveX += Math.cos(game.player.angle) * speed;
-                moveY += Math.sin(game.player.angle) * speed;
-            }
-            if (game.keys['s']) {
-                moveX -= Math.cos(game.player.angle) * speed;
-                moveY -= Math.sin(game.player.angle) * speed;
-            }
-            if (game.keys['a']) {
-                moveX += Math.cos(game.player.angle - Math.PI/2) * speed;
-                moveY += Math.sin(game.player.angle - Math.PI/2) * speed;
-            }
-            if (game.keys['d']) {
-                moveX += Math.cos(game.player.angle + Math.PI/2) * speed;
-                moveY += Math.sin(game.player.angle + Math.PI/2) * speed;
-            }
-            
-            // Sprint
-            if (game.keys['shift'] && game.player.stamina > 0) {
-                moveX *= 1.5;
-                moveY *= 1.5;
-                game.player.stamina -= deltaTime * 30;
-            } else if (!game.keys['shift'] && game.player.stamina < 100) {
-                game.player.stamina += deltaTime * 20;
-            }
-            game.player.stamina = Math.max(0, Math.min(100, game.player.stamina));
-            
-            // Check collision
-            if (canMoveTo(game.player.x + moveX, game.player.y)) {
-                game.player.x += moveX;
-            }
-            if (canMoveTo(game.player.x, game.player.y + moveY)) {
-                game.player.y += moveY;
-            }
-        }
-
-        function canMoveTo(x, y) {
-            const mapX = Math.floor(x);
-            const mapY = Math.floor(y);
-            
-            if (mapX < 0 || mapX >= game.map.length || 
-                mapY < 0 || mapY >= game.map[0].length) {
-                return false;
-            }
-            
-            return game.map[mapX][mapY] === 0;
-        }
-
-        function updateEnemies(deltaTime) {
-            if (game.paused) return;
-            
-            for (const enemy of game.enemies) {
-                if (enemy.health <= 0) continue;
                 
-                const dx = game.player.x - enemy.x;
-                const dy = game.player.y - enemy.y;
-                const distance = Math.sqrt(dx * dx + dy * dy);
+                this.updateHUD();
+            },
+            
+            updateHUD() {
+                document.getElementById('healthDisplay').textContent = 
+                    `HEALTH: ${Math.max(0, Math.floor(this.player.health))}`;
+                document.getElementById('ammoDisplay').textContent = 
+                    `AMMO: ${this.player.ammo}`;
+                document.getElementById('weaponDisplay').textContent = 
+                    ['FIST', 'PISTOL', 'SHOTGUN', 'CHAIN'][this.player.weapon];
+            },
+            
+            // ==================== OPTIMIZED RENDERING ====================
+            render() {
+                const ctx = this.ctx;
+                const width = this.canvas.width;
+                const height = this.canvas.height;
                 
-                if (distance < 10) {
-                    const angle = Math.atan2(dy, dx);
-                    enemy.x += Math.cos(angle) * enemy.speed * deltaTime * 30;
-                    enemy.y += Math.sin(angle) * enemy.speed * deltaTime * 30;
+                // Clear screen efficiently
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, width, height);
+                
+                // Draw optimized floor and ceiling (simplified)
+                this.drawFloorCeiling(ctx, width, height);
+                
+                // Draw walls with optimized raycasting
+                this.drawWalls(ctx, width, height);
+                
+                // Draw enemies
+                this.drawEnemies(ctx, width, height);
+                
+                // Draw minimap
+                this.drawMinimap(ctx);
+            },
+            
+            drawFloorCeiling(ctx, width, height) {
+                // Simple gradient floor/ceiling (faster than per-pixel)
+                const halfHeight = height / 2;
+                
+                // Ceiling gradient
+                const ceilingGradient = ctx.createLinearGradient(0, 0, 0, halfHeight);
+                ceilingGradient.addColorStop(0, '#111');
+                ceilingGradient.addColorStop(1, '#222');
+                ctx.fillStyle = ceilingGradient;
+                ctx.fillRect(0, 0, width, halfHeight);
+                
+                // Floor gradient
+                const floorGradient = ctx.createLinearGradient(0, halfHeight, 0, height);
+                floorGradient.addColorStop(0, '#333');
+                floorGradient.addColorStop(1, '#222');
+                ctx.fillStyle = floorGradient;
+                ctx.fillRect(0, halfHeight, width, halfHeight);
+            },
+            
+            drawWalls(ctx, width, height) {
+                const halfHeight = height / 2;
+                const rayCount = this.RAY_COUNT;
+                const step = width / rayCount;
+                
+                for (let i = 0; i < rayCount; i++) {
+                    const screenX = i * step;
+                    const rayAngle = this.player.angle - this.FOV/2 + (i / rayCount) * this.FOV;
                     
-                    // Simple attack
-                    if (distance < 1.5) {
-                        game.player.health -= settings.enemyDamage * deltaTime;
-                        if (game.player.health <= 0) {
-                            gameOver();
-                        }
-                        updateHUD();
-                    }
-                }
-            }
-        }
-
-        // ==================== RAYCASTING ENGINE ====================
-        function raycast() {
-            const ctx = game.ctx;
-            const width = game.canvas.width;
-            const height = game.canvas.height;
-            
-            // Clear screen
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, width, height);
-            
-            // Draw ceiling and floor
-            drawCeilingAndFloor();
-            
-            // Raycast walls
-            const fov = Math.PI / 3; // 60 degrees
-            const rayCount = width;
-            
-            for (let x = 0; x < rayCount; x++) {
-                // Calculate ray angle
-                const rayAngle = game.player.angle - fov/2 + (x / rayCount) * fov;
-                
-                // Ray direction
-                const rayDirX = Math.cos(rayAngle);
-                const rayDirY = Math.sin(rayAngle);
-                
-                // Player position in map
-                let mapX = Math.floor(game.player.x);
-                let mapY = Math.floor(game.player.y);
-                
-                // Length of ray from current position to next x or y-side
-                let deltaDistX = Math.abs(1 / rayDirX);
-                let deltaDistY = Math.abs(1 / rayDirY);
-                
-                let sideDistX, sideDistY;
-                let stepX, stepY;
-                let hit = 0;
-                let side = 0;
-                
-                // Calculate step and initial sideDist
-                if (rayDirX < 0) {
-                    stepX = -1;
-                    sideDistX = (game.player.x - mapX) * deltaDistX;
-                } else {
-                    stepX = 1;
-                    sideDistX = (mapX + 1 - game.player.x) * deltaDistX;
-                }
-                
-                if (rayDirY < 0) {
-                    stepY = -1;
-                    sideDistY = (game.player.y - mapY) * deltaDistY;
-                } else {
-                    stepY = 1;
-                    sideDistY = (mapY + 1 - game.player.y) * deltaDistY;
-                }
-                
-                // Digital Differential Analysis (DDA)
-                while (hit === 0) {
-                    if (sideDistX < sideDistY) {
-                        sideDistX += deltaDistX;
-                        mapX += stepX;
-                        side = 0;
+                    // Fast ray casting with limited steps
+                    const rayDirX = this.fastCos(rayAngle);
+                    const rayDirY = this.fastSin(rayAngle);
+                    
+                    let mapX = Math.floor(this.player.x);
+                    let mapY = Math.floor(this.player.y);
+                    
+                    // Simplified DDA with limited steps for performance
+                    let tMaxX, tMaxY, tDeltaX, tDeltaY, stepX, stepY, hitSide;
+                    
+                    // Initialization
+                    if (rayDirX < 0) {
+                        stepX = -1;
+                        tMaxX = (this.player.x - mapX) / -rayDirX;
                     } else {
-                        sideDistY += deltaDistY;
-                        mapY += stepY;
-                        side = 1;
+                        stepX = 1;
+                        tMaxX = (mapX + 1 - this.player.x) / rayDirX;
                     }
                     
-                    // Check if ray hit a wall
-                    if (mapX >= 0 && mapX < game.map.length && 
-                        mapY >= 0 && mapY < game.map[0].length) {
-                        if (game.map[mapX][mapY] === 1) {
-                            hit = 1;
+                    if (rayDirY < 0) {
+                        stepY = -1;
+                        tMaxY = (this.player.y - mapY) / -rayDirY;
+                    } else {
+                        stepY = 1;
+                        tMaxY = (mapY + 1 - this.player.y) / rayDirY;
+                    }
+                    
+                    tDeltaX = Math.abs(1 / rayDirX);
+                    tDeltaY = Math.abs(1 / rayDirY);
+                    
+                    // Ray marching (limited to 20 steps for performance)
+                    let hit = false;
+                    for (let stepCount = 0; stepCount < 20 && !hit; stepCount++) {
+                        if (tMaxX < tMaxY) {
+                            tMaxX += tDeltaX;
+                            mapX += stepX;
+                            hitSide = 0;
+                        } else {
+                            tMaxY += tDeltaY;
+                            mapY += stepY;
+                            hitSide = 1;
+                        }
+                        
+                        // Check bounds
+                        if (mapX < 0 || mapX >= this.map.length || 
+                            mapY < 0 || mapY >= this.map[0].length) {
+                            hit = true;
+                            break;
+                        }
+                        
+                        // Check for wall hit
+                        if (this.map[mapX][mapY] > 0) {
+                            hit = true;
+                        }
+                    }
+                    
+                    if (hit) {
+                        // Calculate distance
+                        let distance;
+                        if (hitSide === 0) {
+                            distance = (mapX - this.player.x + (1 - stepX) / 2) / rayDirX;
+                        } else {
+                            distance = (mapY - this.player.y + (1 - stepY) / 2) / rayDirY;
+                        }
+                        
+                        // Calculate wall height with capping
+                        let lineHeight = Math.min(height, height / distance);
+                        if (lineHeight > height * 2) lineHeight = height * 2;
+                        
+                        // Calculate draw positions
+                        let drawStart = Math.max(0, halfHeight - lineHeight/2);
+                        let drawEnd = Math.min(height, halfHeight + lineHeight/2);
+                        
+                        // Choose wall color based on hit side
+                        const color = hitSide === 0 ? this.wallColors[0] : this.wallColors[1];
+                        
+                        // Apply distance-based darkening
+                        const darkness = Math.min(0.8, distance / 15);
+                        ctx.fillStyle = this.darkenColor(color, darkness);
+                        
+                        // Draw wall slice
+                        ctx.fillRect(screenX, drawStart, Math.ceil(step), drawEnd - drawStart);
+                    }
+                }
+            },
+            
+            drawEnemies(ctx, width, height) {
+                const halfHeight = height / 2;
+                const fovHalf = this.FOV / 2;
+                
+                // Sort enemies by distance (back to front for proper rendering)
+                const sortedEnemies = this.enemies
+                    .filter(enemy => enemy.health > 0)
+                    .map(enemy => {
+                        const dx = enemy.x - this.player.x;
+                        const dy = enemy.y - this.player.y;
+                        return {
+                            ...enemy,
+                            distance: dx * dx + dy * dy,
+                            angle: Math.atan2(dy, dx)
+                        };
+                    })
+                    .sort((a, b) => b.distance - a.distance);
+                
+                for (const enemy of sortedEnemies) {
+                    const distance = Math.sqrt(enemy.distance);
+                    
+                    // Check if enemy is visible (within FOV and range)
+                    let angleDiff = enemy.angle - this.player.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    if (Math.abs(angleDiff) < fovHalf && distance < 10) {
+                        // Calculate screen position
+                        const screenX = width/2 + (angleDiff / fovHalf) * (width/2);
+                        
+                        // Calculate size based on distance
+                        const size = Math.max(20, 100 / distance);
+                        
+                        // Draw enemy
+                        ctx.fillStyle = enemy.health > 50 ? '#8b0000' : '#660000';
+                        ctx.fillRect(screenX - size/2, halfHeight - size/2, size, size);
+                        
+                        // Draw simple face
+                        ctx.fillStyle = '#ff0000';
+                        ctx.fillRect(screenX - size/4, halfHeight - size/4, size/2, size/4);
+                        
+                        // Draw health bar
+                        const healthPercent = enemy.health / 100;
+                        const barWidth = size;
+                        const barHeight = 4;
+                        
+                        ctx.fillStyle = '#000';
+                        ctx.fillRect(screenX - size/2, halfHeight - size/2 - 8, barWidth, barHeight);
+                        ctx.fillStyle = '#0f0';
+                        ctx.fillRect(screenX - size/2, halfHeight - size/2 - 8, barWidth * healthPercent, barHeight);
+                    }
+                }
+            },
+            
+            drawMinimap(ctx) {
+                const mapSize = 100;
+                const cellSize = mapSize / this.map.length;
+                
+                // Draw map background
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                ctx.fillRect(10, 10, mapSize, mapSize);
+                
+                // Draw walls
+                for (let x = 0; x < this.map.length; x++) {
+                    for (let y = 0; y < this.map[0].length; y++) {
+                        if (this.map[x][y] === 1) {
+                            ctx.fillStyle = '#666';
+                            ctx.fillRect(10 + x * cellSize, 10 + y * cellSize, cellSize, cellSize);
                         }
                     }
                 }
                 
-                // Calculate distance projected on camera direction
-                let perpWallDist;
-                if (side === 0) {
-                    perpWallDist = (mapX - game.player.x + (1 - stepX) / 2) / rayDirX;
-                } else {
-                    perpWallDist = (mapY - game.player.y + (1 - stepY) / 2) / rayDirY;
-                }
+                // Draw player
+                ctx.fillStyle = '#0f0';
+                ctx.beginPath();
+                ctx.arc(10 + this.player.x * cellSize, 10 + this.player.y * cellSize, cellSize/2, 0, Math.PI * 2);
+                ctx.fill();
                 
-                // Calculate height of line to draw on screen
-                const lineHeight = Math.floor(height / perpWallDist);
-                
-                // Calculate lowest and highest pixel to fill
-                let drawStart = -lineHeight / 2 + height / 2;
-                if (drawStart < 0) drawStart = 0;
-                let drawEnd = lineHeight / 2 + height / 2;
-                if (drawEnd >= height) drawEnd = height - 1;
-                
-                // Choose wall color
-                let color;
-                if (game.map[mapX][mapY] === 1) {
-                    color = side === 0 ? '#8b4513' : '#a0522d'; // Different colors for different sides
-                }
-                
-                // Add shading based on distance
-                const darkness = Math.min(1, perpWallDist / 15);
-                const rgb = hexToRgb(color);
-                const shadedColor = `rgb(${Math.floor(rgb.r * (1 - darkness))}, 
-                                          ${Math.floor(rgb.g * (1 - darkness))}, 
-                                          ${Math.floor(rgb.b * (1 - darkness))})`;
-                
-                // Draw the wall slice
-                ctx.fillStyle = shadedColor;
-                ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
-                
-                // Draw floor and ceiling for this column
-                drawFloorAndCeilingColumn(x, drawEnd, perpWallDist, rayDirX, rayDirY);
-            }
-            
-            // Draw enemies
-            drawEnemies();
-            
-            // Draw minimap
-            drawMinimap();
-        }
-
-        function drawCeilingAndFloor() {
-            const ctx = game.ctx;
-            const height = game.canvas.height;
-            
-            // Draw ceiling (darker at top)
-            for (let y = 0; y < height/2; y++) {
-                const darkness = 1 - (y / (height/2));
-                ctx.fillStyle = `rgb(${Math.floor(20 * darkness)}, 
-                                       ${Math.floor(15 * darkness)}, 
-                                       ${Math.floor(15 * darkness)})`;
-                ctx.fillRect(0, y, game.canvas.width, 1);
-            }
-            
-            // Draw floor (darker at bottom)
-            for (let y = height/2; y < height; y++) {
-                const darkness = (y - height/2) / (height/2);
-                ctx.fillStyle = `rgb(${Math.floor(50 * (1 - darkness))}, 
-                                       ${Math.floor(30 * (1 - darkness))}, 
-                                       ${Math.floor(30 * (1 - darkness))})`;
-                ctx.fillRect(0, y, game.canvas.width, 1);
-            }
-        }
-
-        function drawFloorAndCeilingColumn(x, wallBottom, perpWallDist, rayDirX, rayDirY) {
-            const ctx = game.ctx;
-            const height = game.canvas.height;
-            const player = game.player;
-            
-            // Draw floor from wall bottom to screen bottom
-            for (let y = wallBottom; y < height; y++) {
-                // Current distance
-                const currentDist = height / (2.0 * y - height);
-                
-                // Weight
-                const weight = currentDist / perpWallDist;
-                
-                // Current floor position
-                const currentFloorX = weight * (player.x + rayDirX * perpWallDist) + (1.0 - weight) * player.x;
-                const currentFloorY = weight * (player.y + rayDirY * perpWallDist) + (1.0 - weight) * player.y;
-                
-                // Texture coordinates
-                const floorTexX = Math.floor(currentFloorX * 32) % 32;
-                const floorTexY = Math.floor(currentFloorY * 32) % 32;
-                
-                // Floor pattern
-                const pattern = (floorTexX + floorTexY) % 2;
-                const floorDarkness = Math.min(0.7, currentDist / 20);
-                
-                if (pattern === 0) {
-                    ctx.fillStyle = `rgba(60, 40, 40, ${1 - floorDarkness})`;
-                } else {
-                    ctx.fillStyle = `rgba(80, 50, 50, ${1 - floorDarkness})`;
-                }
-                
-                ctx.fillRect(x, y, 1, 1);
-                
-                // Draw ceiling (mirror of floor)
-                const ceilingY = height - y;
-                const ceilingDarkness = Math.min(0.5, currentDist / 30);
-                
-                if (pattern === 0) {
-                    ctx.fillStyle = `rgba(30, 20, 20, ${1 - ceilingDarkness})`;
-                } else {
-                    ctx.fillStyle = `rgba(40, 25, 25, ${1 - ceilingDarkness})`;
-                }
-                
-                ctx.fillRect(x, ceilingY, 1, 1);
-            }
-        }
-
-        function drawEnemies() {
-            const ctx = game.ctx;
-            const width = game.canvas.width;
-            const height = game.canvas.height;
-            const fov = Math.PI / 3;
-            
-            // Sort enemies by distance (painter's algorithm)
-            const sortedEnemies = game.enemies
-                .filter(enemy => enemy.health > 0)
-                .map(enemy => {
-                    const dx = enemy.x - game.player.x;
-                    const dy = enemy.y - game.player.y;
-                    return {
-                        ...enemy,
-                        distance: dx * dx + dy * dy
-                    };
-                })
-                .sort((a, b) => b.distance - a.distance);
-            
-            for (const enemy of sortedEnemies) {
-                const dx = enemy.x - game.player.x;
-                const dy = enemy.y - game.player.y;
-                const distance = Math.sqrt(enemy.distance);
-                
-                // Calculate angle to enemy
-                const enemyAngle = Math.atan2(dy, dx) - game.player.angle;
-                
-                // Normalize angle
-                let angleDiff = enemyAngle;
-                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-                
-                // Check if enemy is in FOV
-                if (Math.abs(angleDiff) < fov/2 && distance < 15) {
-                    // Calculate screen position
-                    const screenX = (angleDiff + fov/2) / fov * width;
-                    
-                    // Calculate size based on distance
-                    const size = Math.max(30, 200 / distance);
-                    
-                    // Draw enemy
-                    ctx.fillStyle = enemy.health > 50 ? '#8b0000' : '#660000';
-                    ctx.fillRect(screenX - size/2, height/2 - size/2, size, size);
-                    
-                    // Draw enemy face
-                    ctx.fillStyle = '#ff0000';
-                    ctx.fillRect(screenX - size/4, height/2 - size/4, size/2, size/4);
-                    
-                    // Draw eyes
-                    ctx.fillStyle = '#ffff00';
-                    ctx.fillRect(screenX - size/3, height/2 - size/3, size/8, size/8);
-                    ctx.fillRect(screenX + size/6, height/2 - size/3, size/8, size/8);
-                    
-                    // Draw health bar
-                    const healthPercent = enemy.health / 100;
-                    const barWidth = size;
-                    const barHeight = 5;
-                    const barX = screenX - size/2;
-                    const barY = height/2 - size/2 - 10;
-                    
-                    ctx.fillStyle = '#000000';
-                    ctx.fillRect(barX, barY, barWidth, barHeight);
-                    
-                    ctx.fillStyle = '#00ff00';
-                    ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
-                }
-            }
-        }
-
-        function drawMinimap() {
-            const ctx = game.ctx;
-            const mapSize = 150;
-            const cellSize = mapSize / game.map.length;
-            
-            // Draw map background
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            ctx.fillRect(10, 10, mapSize, mapSize);
-            
-            // Draw walls
-            for (let x = 0; x < game.map.length; x++) {
-                for (let y = 0; y < game.map[0].length; y++) {
-                    if (game.map[x][y] === 1) {
-                        ctx.fillStyle = '#666666';
-                        ctx.fillRect(10 + x * cellSize, 10 + y * cellSize, cellSize, cellSize);
-                        
-                        ctx.strokeStyle = '#444444';
-                        ctx.strokeRect(10 + x * cellSize, 10 + y * cellSize, cellSize, cellSize);
+                // Draw enemies
+                for (const enemy of this.enemies) {
+                    if (enemy.health > 0) {
+                        ctx.fillStyle = '#f00';
+                        ctx.beginPath();
+                        ctx.arc(10 + enemy.x * cellSize, 10 + enemy.y * cellSize, cellSize/2, 0, Math.PI * 2);
+                        ctx.fill();
                     }
                 }
-            }
+            },
             
-            // Draw player
-            ctx.fillStyle = '#00ff00';
-            ctx.beginPath();
-            ctx.arc(
-                10 + game.player.x * cellSize,
-                10 + game.player.y * cellSize,
-                cellSize/2,
-                0, Math.PI * 2
-            );
-            ctx.fill();
+            darkenColor(color, amount) {
+                // Simple color darkening for distance effect
+                const r = parseInt(color.substr(1, 2), 16);
+                const g = parseInt(color.substr(3, 2), 16);
+                const b = parseInt(color.substr(5, 2), 16);
+                
+                const darkR = Math.floor(r * (1 - amount));
+                const darkG = Math.floor(g * (1 - amount));
+                const darkB = Math.floor(b * (1 - amount));
+                
+                return `rgb(${darkR}, ${darkG}, ${darkB})`;
+            },
             
-            // Draw player direction
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(
-                10 + game.player.x * cellSize,
-                10 + game.player.y * cellSize
-            );
-            ctx.lineTo(
-                10 + (game.player.x + Math.cos(game.player.angle)) * cellSize,
-                10 + (game.player.y + Math.sin(game.player.angle)) * cellSize
-            );
-            ctx.stroke();
-            
-            // Draw enemies
-            for (const enemy of game.enemies) {
-                if (enemy.health > 0) {
-                    ctx.fillStyle = '#ff0000';
-                    ctx.beginPath();
-                    ctx.arc(
-                        10 + enemy.x * cellSize,
-                        10 + enemy.y * cellSize,
-                        cellSize/2,
-                        0, Math.PI * 2
-                    );
-                    ctx.fill();
+            togglePause() {
+                this.paused = !this.paused;
+                if (this.paused) {
+                    document.exitPointerLock();
                 }
-            }
-        }
-
-        function hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : { r: 0, g: 0, b: 0 };
-        }
-
-        function pauseGame() {
-            game.paused = true;
-            document.getElementById('pauseMenu').style.display = 'block';
-        }
-
-        function resumeGame() {
-            game.paused = false;
-            document.getElementById('pauseMenu').style.display = 'none';
-            document.getElementById('settingsPanel').style.display = 'none';
-            document.getElementById('howToPlayPanel').style.display = 'none';
-        }
-
-        function restartGame() {
-            document.location.reload();
-        }
-
-        function quitToMenu() {
-            document.location.reload();
-        }
-
-        function gameOver() {
-            game.running = false;
-            alert(`GAME OVER!\n\nYou killed ${game.enemies.filter(e => e.health <= 0).length} enemies\n\nPress OK to restart`);
-            restartGame();
-        }
-
-        function gameLoop(currentTime) {
-            const deltaTime = (currentTime - game.lastTime) / 1000;
-            game.lastTime = currentTime;
+            },
             
-            if (game.running && !game.paused) {
-                updatePlayer(deltaTime);
-                updateEnemies(deltaTime);
-                raycast(); // Use raycasting instead of old draw function
-                updateHUD();
-            }
+            gameOver() {
+                this.running = false;
+                const kills = this.enemies.filter(e => e.health <= 0).length;
+                alert(`GAME OVER!\n\nDemons slain: ${kills}\n\nPress OK to restart`);
+                document.location.reload();
+            },
             
-            requestAnimationFrame(gameLoop);
+            updateFPS(currentTime) {
+                this.frameCount++;
+                
+                if (currentTime - this.lastFpsUpdate >= 1000) {
+                    this.fps = this.frameCount;
+                    this.frameCount = 0;
+                    this.lastFpsUpdate = currentTime;
+                    
+                    document.getElementById('fpsCounter').textContent = `FPS: ${this.fps}`;
+                }
+            },
+            
+            gameLoop(currentTime) {
+                const deltaTime = (currentTime - this.lastTime) / 1000;
+                this.lastTime = currentTime;
+                
+                // Update FPS counter
+                this.updateFPS(currentTime);
+                
+                if (this.running && !this.paused) {
+                    this.update(deltaTime);
+                    this.render();
+                }
+                
+                requestAnimationFrame((time) => this.gameLoop(time));
+            }
+        };
+
+        // ==================== MENU FUNCTIONS ====================
+        function startGame() {
+            document.getElementById('menuScreen').style.display = 'none';
+            document.getElementById('gameContainer').style.display = 'block';
+            Game.init();
         }
 
-        // Initialize menu
+        function showHowToPlay() {
+            document.getElementById('howToPlay').style.display = 'block';
+        }
+
+        function hideHowToPlay() {
+            document.getElementById('howToPlay').style.display = 'none';
+        }
+
+        // Initialize on load
         window.addEventListener('load', () => {
-            updateSliderValues();
+            console.log("Game ready!");
         });
     </script>
 </body>
