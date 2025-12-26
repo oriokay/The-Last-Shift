@@ -3,43 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAZE: Hellfire Protocol</title>
+    <title>DOOM 1993 Clone - Working Version</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
-        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none;
         }
 
         body {
             background: #000;
-            color: #ff4444;
-            font-family: 'Orbitron', monospace;
             overflow: hidden;
+            font-family: monospace;
+            color: #fff;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
-            cursor: crosshair;
         }
 
         #gameContainer {
             position: relative;
-            border: 3px solid #ff0000;
-            box-shadow: 
-                0 0 30px #ff0000,
-                inset 0 0 30px rgba(255, 0, 0, 0.3);
-            background: #000;
+            border: 2px solid #f00;
         }
 
         #gameCanvas {
             display: block;
-            image-rendering: crisp-edges;
-            image-rendering: pixelated;
+            background: #000;
         }
 
         #hud {
@@ -47,57 +37,30 @@
             top: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 100;
-        }
-
-        #healthBar {
-            position: absolute;
-            bottom: 120px;
-            left: 30px;
-            width: 300px;
-            height: 30px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 3px solid #ff0000;
-            overflow: hidden;
-        }
-
-        #healthFill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff0000, #ffff00);
-            width: 100%;
-            transition: width 0.3s;
-        }
-
-        #healthText {
-            position: absolute;
-            bottom: 125px;
-            left: 340px;
-            color: #ff0000;
-            font-size: 24px;
+            padding: 10px;
+            color: #f00;
+            font-size: 18px;
             font-weight: bold;
-            text-shadow: 0 0 10px #ff0000;
+            text-shadow: 0 0 5px #000;
+            background: rgba(0, 0, 0, 0.5);
         }
 
-        #ammo {
+        #loading {
             position: absolute;
-            bottom: 120px;
-            right: 30px;
-            color: #ffff00;
-            font-size: 28px;
-            font-weight: bold;
-            text-shadow: 0 0 10px #ffff00;
-        }
-
-        #weapon {
-            position: absolute;
-            bottom: 0;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
-            width: 400px;
-            height: 200px;
-            pointer-events: none;
+            transform: translate(-50%, -50%);
+            color: #f00;
+            font-size: 24px;
+            text-align: center;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #888;
+            font-size: 12px;
         }
 
         #crosshair {
@@ -105,1143 +68,414 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 8px;
-            height: 8px;
-            background: #ff0000;
-            border: 1px solid #ffffff;
+            width: 4px;
+            height: 4px;
+            background: #f00;
+            border: 1px solid #fff;
             pointer-events: none;
-        }
-
-        #minimap {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 200px;
-            height: 200px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid #ff0000;
-            z-index: 101;
-        }
-
-        #message {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #ffff00;
-            font-size: 48px;
-            text-align: center;
-            text-shadow: 0 0 20px #ff0000;
-            opacity: 0;
-            transition: opacity 0.5s;
-            pointer-events: none;
-        }
-
-        #loadingScreen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-        }
-
-        #loadingTitle {
-            font-size: 72px;
-            color: #ff0000;
-            margin-bottom: 50px;
-            text-shadow: 0 0 30px #ff0000;
-            animation: pulse 2s infinite;
-        }
-
-        #loadingBar {
-            width: 500px;
-            height: 30px;
-            background: #222;
-            border: 3px solid #ff0000;
-            margin-top: 20px;
-            overflow: hidden;
-        }
-
-        #loadingProgress {
-            height: 100%;
-            background: linear-gradient(90deg, #ff0000, #ff8800);
-            width: 0%;
-            transition: width 0.3s;
-        }
-
-        #loadingText {
-            color: #ff8888;
-            font-size: 20px;
-            margin-top: 10px;
-        }
-
-        #controls {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: #888888;
-            font-size: 14px;
-            line-height: 1.5;
-            background: rgba(0, 0, 0, 0.7);
-            padding: 10px;
-            border: 1px solid #444444;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-
-        @keyframes weaponFire {
-            0% { transform: translateX(-50%) translateY(0); }
-            25% { transform: translateX(-50%) translateY(-10px); }
-            100% { transform: translateX(-50%) translateY(0); }
-        }
-
-        @keyframes damageFlash {
-            0% { background-color: transparent; }
-            50% { background-color: rgba(255, 0, 0, 0.3); }
-            100% { background-color: transparent; }
-        }
-
-        .fire {
-            animation: weaponFire 0.1s ease;
-        }
-
-        .damage {
-            animation: damageFlash 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div id="loadingScreen">
-        <div id="loadingTitle">RAZE: Hellfire Protocol</div>
-        <div id="loadingText">LOADING DEMONIC INVASION...</div>
-        <div id="loadingBar">
-            <div id="loadingProgress"></div>
-        </div>
-    </div>
-
+    <div id="loading">LOADING DOOM CLONE...</div>
+    
     <div id="gameContainer" style="display: none;">
-        <canvas id="gameCanvas" width="1200" height="800"></canvas>
-        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
         <div id="hud">
-            <div id="healthBar">
-                <div id="healthFill"></div>
-            </div>
-            <div id="healthText">HEALTH</div>
-            <div id="ammo">00</div>
-            <div id="weapon"></div>
-            <div id="crosshair"></div>
-            <canvas id="minimap" width="200" height="200"></canvas>
-            <div id="message"></div>
+            <span id="health">HEALTH: 100</span> | 
+            <span id="ammo">AMMO: 50</span> | 
+            <span id="weapon">WEAPON: PISTOL</span>
         </div>
+        <div id="crosshair"></div>
     </div>
 
     <div id="controls" style="display: none;">
-        <div><strong>WASD:</strong> Move</div>
-        <div><strong>Mouse:</strong> Aim/Look</div>
-        <div><strong>Left Click:</strong> Shoot</div>
-        <div><strong>R:</strong> Reload</div>
-        <div><strong>1-4:</strong> Switch Weapons</div>
-        <div><strong>E:</strong> Use/Open</div>
-        <div><strong>Shift:</strong> Run</div>
-        <div><strong>Space:</strong> Jump</div>
+        WASD: Move | Mouse: Aim | Left Click: Shoot | R: Reload | 1-4: Weapons
     </div>
 
     <script>
-        // ==================== GAME ENGINE ====================
-        class DoomEngine {
+        // ==================== SIMPLE DOOM CLONE ====================
+        class DoomGame {
             constructor() {
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
-                this.minimapCtx = document.getElementById('minimap').getContext('2d');
                 
                 // Game state
-                this.gameState = {
-                    running: true,
-                    player: {
-                        x: 1.5,
-                        y: 1.5,
-                        dir: 0,
-                        planeX: 0,
-                        planeY: 0.66,
-                        health: 100,
-                        maxHealth: 100,
-                        ammo: 50,
-                        maxAmmo: 50,
-                        weapons: ['fist', 'pistol', 'shotgun', 'chaingun'],
-                        currentWeapon: 1,
-                        speed: 0.1,
-                        rotSpeed: 0.05,
-                        height: 0.5,
-                        bob: 0
-                    },
-                    map: [],
-                    textures: {},
-                    sprites: [],
-                    enemies: [],
-                    projectiles: [],
-                    particles: [],
-                    raycast: {
-                        width: this.canvas.width,
-                        height: this.canvas.height
-                    },
-                    keys: {},
-                    mouse: { x: 0, y: 0, sensitivity: 0.003 },
-                    lastTime: 0,
-                    deltaTime: 0,
-                    frame: 0
+                this.player = {
+                    x: 1.5,
+                    y: 1.5,
+                    angle: 0,
+                    health: 100,
+                    ammo: 50,
+                    weapon: 0,
+                    weapons: ['FIST', 'PISTOL', 'SHOTGUN', 'CHAIN GUN']
                 };
                 
-                // Textures (we'll generate them)
-                this.textures = {
-                    wall: null,
-                    floor: null,
-                    ceiling: null,
-                    enemy: null,
-                    weapons: {}
-                };
+                // Simple map (1 = wall, 0 = empty)
+                this.map = [
+                    [1, 1, 1, 1, 1, 1, 1],
+                    [1, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 0, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 1],
+                    [1, 0, 1, 0, 1, 0, 1],
+                    [1, 0, 0, 0, 0, 0, 1],
+                    [1, 1, 1, 1, 1, 1, 1]
+                ];
                 
-                // Initialize
-                this.init();
+                // Enemies
+                this.enemies = [
+                    { x: 3.5, y: 3.5, health: 100, type: 'IMP' },
+                    { x: 2.5, y: 2.5, health: 100, type: 'IMP' },
+                    { x: 4.5, y: 4.5, health: 100, type: 'IMP' }
+                ];
+                
+                // Input
+                this.keys = {};
+                this.mouse = { x: 0, y: 0 };
+                this.mouseDown = false;
+                
+                // Raycasting settings
+                this.FOV = Math.PI / 3; // 60 degrees
+                this.MAX_DEPTH = 20;
+                
+                // Colors
+                this.colors = {
+                    wall1: '#8b4513',
+                    wall2: '#a0522d',
+                    floor: '#333333',
+                    ceiling: '#111111',
+                    enemy: '#ff0000'
+                };
             }
             
-            async init() {
-                console.log("Initializing DOOM Engine...");
-                
-                // Update loading screen
-                this.updateLoading(20);
-                
-                // Generate game world
-                this.generateMap();
-                await this.generateTextures();
-                
-                this.updateLoading(40);
+            init() {
+                console.log("Initializing DOOM clone...");
                 
                 // Setup input
                 this.setupInput();
                 
-                this.updateLoading(60);
+                // Hide loading, show game
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('gameContainer').style.display = 'block';
+                document.getElementById('controls').style.display = 'block';
                 
-                // Spawn enemies
-                this.spawnEnemies();
-                
-                this.updateLoading(80);
-                
-                // Setup HUD
-                this.setupHUD();
-                
-                this.updateLoading(100);
-                
-                // Hide loading screen, show game
-                setTimeout(() => {
-                    document.getElementById('loadingScreen').style.display = 'none';
-                    document.getElementById('gameContainer').style.display = 'block';
-                    document.getElementById('controls').style.display = 'block';
-                    
-                    // Start game loop
-                    this.gameLoop();
-                }, 500);
-                
-                // Initial message
-                this.showMessage("HELLFIRE PROTOCOL ACTIVATED", 2000);
-            }
-            
-            updateLoading(percent) {
-                const progress = document.getElementById('loadingProgress');
-                const text = document.getElementById('loadingText');
-                
-                if (progress) progress.style.width = percent + '%';
-                if (text) {
-                    const messages = [
-                        "LOADING DEMONIC INVASION...",
-                        "INITIALIZING BFG...",
-                        "LOADING HELLSPAWN TEXTURES...",
-                        "CALIBRATING RAYCAST ENGINE...",
-                        "ARMING PLASMA RIFLE...",
-                        "READY TO RAZE HELL..."
-                    ];
-                    const index = Math.floor(percent / (100 / messages.length));
-                    text.textContent = messages[Math.min(index, messages.length - 1)];
-                }
-            }
-            
-            generateMap() {
-                // Create a 24x24 map (0 = empty, 1-8 = different wall types)
-                const map = [];
-                const size = 24;
-                
-                // Outer walls
-                for (let x = 0; x < size; x++) {
-                    map[x] = [];
-                    for (let y = 0; y < size; y++) {
-                        if (x === 0 || y === 0 || x === size-1 || y === size-1) {
-                            map[x][y] = Math.floor(Math.random() * 3) + 1; // Random wall type
-                        } else {
-                            map[x][y] = 0; // Empty space
-                        }
-                    }
-                }
-                
-                // Add rooms and corridors
-                this.createRoom(map, 3, 3, 6, 6);
-                this.createRoom(map, 15, 3, 6, 6);
-                this.createRoom(map, 3, 15, 6, 6);
-                this.createRoom(map, 15, 15, 6, 6);
-                
-                // Connect rooms
-                this.createCorridor(map, 6, 6, 15, 6);
-                this.createCorridor(map, 6, 6, 6, 15);
-                
-                // Add pillars and obstacles
-                for (let i = 0; i < 10; i++) {
-                    const x = Math.floor(Math.random() * (size - 4)) + 2;
-                    const y = Math.floor(Math.random() * (size - 4)) + 2;
-                    if (map[x][y] === 0) {
-                        map[x][y] = Math.floor(Math.random() * 3) + 4;
-                    }
-                }
-                
-                this.gameState.map = map;
-                
-                // Set player start position
-                this.gameState.player.x = 1.5;
-                this.gameState.player.y = 1.5;
-            }
-            
-            createRoom(map, startX, startY, width, height) {
-                for (let x = startX; x < startX + width; x++) {
-                    for (let y = startY; y < startY + height; y++) {
-                        if (x === startX || y === startY || x === startX + width - 1 || y === startY + height - 1) {
-                            map[x][y] = Math.floor(Math.random() * 3) + 1;
-                        } else {
-                            map[x][y] = 0;
-                        }
-                    }
-                }
-            }
-            
-            createCorridor(map, startX, startY, endX, endY) {
-                let x = startX;
-                let y = startY;
-                
-                // Horizontal first
-                while (x !== endX) {
-                    map[x][y] = 0;
-                    if (x < endX) x++;
-                    else x--;
-                }
-                
-                // Then vertical
-                while (y !== endY) {
-                    map[x][y] = 0;
-                    if (y < endY) y++;
-                    else y--;
-                }
-            }
-            
-            async generateTextures() {
-                // Generate wall textures
-                this.textures.wall = this.createWallTexture();
-                this.textures.floor = this.createFloorTexture();
-                this.textures.ceiling = this.createCeilingTexture();
-                this.textures.enemy = this.createEnemyTexture();
-                
-                // Generate weapon textures
-                this.textures.weapons.pistol = this.createPistolTexture();
-                this.textures.weapons.shotgun = this.createShotgunTexture();
-                this.textures.weapons.chaingun = this.createChaingunTexture();
-            }
-            
-            createWallTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 256;
-                const ctx = canvas.getContext('2d');
-                
-                // Stone wall pattern
-                const gradient = ctx.createLinearGradient(0, 0, 256, 256);
-                gradient.addColorStop(0, '#444444');
-                gradient.addColorStop(0.5, '#666666');
-                gradient.addColorStop(1, '#444444');
-                ctx.fillStyle = gradient;
-                ctx.fillRect(0, 0, 256, 256);
-                
-                // Add stone details
-                ctx.strokeStyle = '#333333';
-                ctx.lineWidth = 2;
-                
-                // Vertical lines
-                for (let x = 0; x < 256; x += 32) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, 0);
-                    ctx.lineTo(x, 256);
-                    ctx.stroke();
-                }
-                
-                // Horizontal lines
-                for (let y = 0; y < 256; y += 32) {
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(256, y);
-                    ctx.stroke();
-                }
-                
-                // Add some grunge
-                ctx.fillStyle = '#222222';
-                for (let i = 0; i < 50; i++) {
-                    const x = Math.random() * 256;
-                    const y = Math.random() * 256;
-                    const size = Math.random() * 10 + 5;
-                    ctx.fillRect(x, y, size, size);
-                }
-                
-                return canvas;
-            }
-            
-            createFloorTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 256;
-                const ctx = canvas.getContext('2d');
-                
-                // Metal floor pattern
-                ctx.fillStyle = '#333333';
-                ctx.fillRect(0, 0, 256, 256);
-                
-                // Hexagonal pattern
-                ctx.strokeStyle = '#555555';
-                ctx.lineWidth = 1;
-                
-                const size = 32;
-                for (let y = 0; y < 256; y += size) {
-                    for (let x = 0; x < 256; x += size) {
-                        ctx.beginPath();
-                        ctx.moveTo(x + size/2, y);
-                        ctx.lineTo(x + size, y + size/3);
-                        ctx.lineTo(x + size, y + 2*size/3);
-                        ctx.lineTo(x + size/2, y + size);
-                        ctx.lineTo(x, y + 2*size/3);
-                        ctx.lineTo(x, y + size/3);
-                        ctx.closePath();
-                        ctx.stroke();
-                    }
-                }
-                
-                // Add some blood stains
-                ctx.fillStyle = '#8b0000';
-                for (let i = 0; i < 10; i++) {
-                    const x = Math.random() * 256;
-                    const y = Math.random() * 256;
-                    const radius = Math.random() * 15 + 5;
-                    
-                    ctx.beginPath();
-                    ctx.arc(x, y, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                return canvas;
-            }
-            
-            createCeilingTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 256;
-                const ctx = canvas.getContext('2d');
-                
-                // Dark ceiling with pipes
-                ctx.fillStyle = '#111111';
-                ctx.fillRect(0, 0, 256, 256);
-                
-                // Pipes
-                ctx.strokeStyle = '#444444';
-                ctx.lineWidth = 8;
-                
-                ctx.beginPath();
-                ctx.moveTo(50, 50);
-                ctx.lineTo(200, 50);
-                ctx.stroke();
-                
-                ctx.beginPath();
-                ctx.moveTo(50, 150);
-                ctx.lineTo(200, 150);
-                ctx.stroke();
-                
-                // Pipe connections
-                ctx.strokeStyle = '#666666';
-                ctx.lineWidth = 4;
-                
-                for (let x = 60; x < 200; x += 30) {
-                    ctx.beginPath();
-                    ctx.moveTo(x, 50);
-                    ctx.lineTo(x, 150);
-                    ctx.stroke();
-                }
-                
-                return canvas;
-            }
-            
-            createEnemyTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 128;
-                canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                
-                // Demon sprite
-                ctx.fillStyle = '#8b0000';
-                ctx.fillRect(0, 0, 128, 128);
-                
-                // Body
-                ctx.fillStyle = '#ff0000';
-                ctx.beginPath();
-                ctx.ellipse(64, 64, 40, 50, 0, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Eyes
-                ctx.fillStyle = '#ffff00';
-                ctx.beginPath();
-                ctx.arc(48, 50, 8, 0, Math.PI * 2);
-                ctx.arc(80, 50, 8, 0, Math.PI * 2);
-                ctx.fill();
-                
-                // Mouth
-                ctx.fillStyle = '#000000';
-                ctx.beginPath();
-                ctx.arc(64, 80, 20, 0, Math.PI);
-                ctx.fill();
-                
-                // Horns
-                ctx.fillStyle = '#444444';
-                ctx.beginPath();
-                ctx.moveTo(40, 20);
-                ctx.lineTo(30, 10);
-                ctx.lineTo(40, 30);
-                ctx.closePath();
-                ctx.fill();
-                
-                ctx.beginPath();
-                ctx.moveTo(88, 20);
-                ctx.lineTo(98, 10);
-                ctx.lineTo(88, 30);
-                ctx.closePath();
-                ctx.fill();
-                
-                return canvas;
-            }
-            
-            createPistolTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 400;
-                canvas.height = 200;
-                const ctx = canvas.getContext('2d');
-                
-                // Clear background
-                ctx.clearRect(0, 0, 400, 200);
-                
-                // Gun metal color
-                const gradient = ctx.createLinearGradient(0, 0, 400, 0);
-                gradient.addColorStop(0, '#333333');
-                gradient.addColorStop(0.5, '#666666');
-                gradient.addColorStop(1, '#333333');
-                
-                // Pistol body
-                ctx.fillStyle = gradient;
-                ctx.fillRect(100, 80, 200, 40);
-                ctx.fillRect(250, 70, 80, 60);
-                
-                // Barrel
-                ctx.fillRect(320, 85, 50, 30);
-                
-                // Grip
-                ctx.fillStyle = '#222222';
-                ctx.fillRect(120, 120, 60, 60);
-                
-                // Details
-                ctx.strokeStyle = '#111111';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(100, 80, 200, 40);
-                ctx.strokeRect(250, 70, 80, 60);
-                
-                // Sight
-                ctx.fillStyle = '#ffff00';
-                ctx.fillRect(310, 75, 4, 8);
-                
-                return canvas;
-            }
-            
-            createShotgunTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 400;
-                canvas.height = 200;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.clearRect(0, 0, 400, 200);
-                
-                // Shotgun body
-                ctx.fillStyle = '#444444';
-                ctx.fillRect(50, 60, 300, 50);
-                
-                // Barrel
-                ctx.fillStyle = '#222222';
-                ctx.fillRect(320, 65, 80, 40);
-                
-                // Pump
-                ctx.fillStyle = '#333333';
-                ctx.fillRect(180, 110, 120, 20);
-                
-                // Stock
-                ctx.fillStyle = '#8b4513';
-                ctx.fillRect(50, 110, 100, 60);
-                
-                // Details
-                ctx.strokeStyle = '#111111';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(50, 60, 300, 50);
-                
-                return canvas;
-            }
-            
-            createChaingunTexture() {
-                const canvas = document.createElement('canvas');
-                canvas.width = 400;
-                canvas.height = 200;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.clearRect(0, 0, 400, 200);
-                
-                // Chaingun body
-                ctx.fillStyle = '#222222';
-                ctx.fillRect(50, 70, 300, 60);
-                
-                // Multiple barrels
-                ctx.fillStyle = '#111111';
-                for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(320, 70 + i*15, 60, 10);
-                }
-                
-                // Ammo chain
-                ctx.fillStyle = '#666666';
-                for (let i = 0; i < 10; i++) {
-                    ctx.beginPath();
-                    ctx.arc(80 + i*20, 130, 8, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                // Handle
-                ctx.fillStyle = '#333333';
-                ctx.fillRect(200, 130, 40, 50);
-                
-                return canvas;
-            }
-            
-            spawnEnemies() {
-                const enemyCount = 10;
-                
-                for (let i = 0; i < enemyCount; i++) {
-                    let x, y;
-                    
-                    // Find empty spot
-                    do {
-                        x = Math.floor(Math.random() * 20) + 2;
-                        y = Math.floor(Math.random() * 20) + 2;
-                    } while (this.gameState.map[x][y] !== 0 || 
-                            (x < 3 && y < 3)); // Not too close to player
-                    
-                    this.gameState.enemies.push({
-                        x: x + 0.5,
-                        y: y + 0.5,
-                        type: 'imp',
-                        health: 100,
-                        maxHealth: 100,
-                        speed: 0.03,
-                        attackRange: 3,
-                        attackDamage: 10,
-                        attackCooldown: 0,
-                        lastAttack: 0,
-                        state: 'idle', // idle, chasing, attacking
-                        sprite: this.textures.enemy
-                    });
-                }
+                // Start game loop
+                this.gameLoop();
             }
             
             setupInput() {
-                // Keyboard input
+                // Keyboard
                 window.addEventListener('keydown', (e) => {
-                    this.gameState.keys[e.key.toLowerCase()] = true;
+                    this.keys[e.key.toLowerCase()] = true;
                     
                     // Weapon switching
                     if (e.key >= '1' && e.key <= '4') {
                         const weaponIndex = parseInt(e.key) - 1;
-                        if (weaponIndex < this.gameState.player.weapons.length) {
-                            this.gameState.player.currentWeapon = weaponIndex;
-                            this.updateWeaponDisplay();
+                        if (weaponIndex < this.player.weapons.length) {
+                            this.player.weapon = weaponIndex;
+                            this.updateHUD();
                         }
                     }
                     
                     // Reload
-                    if (e.key === 'r' && this.gameState.player.ammo < this.gameState.player.maxAmmo) {
-                        this.gameState.player.ammo = this.gameState.player.maxAmmo;
+                    if (e.key === 'r') {
+                        this.player.ammo = 50;
                         this.updateHUD();
-                    }
-                    
-                    // Jump (simple implementation)
-                    if (e.key === ' ') {
-                        this.gameState.player.height = 1.0;
-                        setTimeout(() => {
-                            this.gameState.player.height = 0.5;
-                        }, 300);
                     }
                 });
                 
                 window.addEventListener('keyup', (e) => {
-                    this.gameState.keys[e.key.toLowerCase()] = false;
+                    this.keys[e.key.toLowerCase()] = false;
                 });
                 
-                // Mouse input
+                // Mouse
                 this.canvas.addEventListener('mousedown', (e) => {
-                    if (e.button === 0) { // Left click
+                    this.mouseDown = true;
+                    if (e.button === 0) {
                         this.shoot();
                     }
                 });
                 
+                this.canvas.addEventListener('mouseup', () => {
+                    this.mouseDown = false;
+                });
+                
                 this.canvas.addEventListener('mousemove', (e) => {
                     const rect = this.canvas.getBoundingClientRect();
-                    const centerX = rect.left + this.canvas.width / 2;
-                    const centerY = rect.top + this.canvas.height / 2;
+                    this.mouse.x = e.clientX - rect.left;
+                    this.mouse.y = e.clientY - rect.top;
                     
-                    // Calculate mouse movement
-                    const deltaX = e.clientX - centerX;
+                    // Update player angle based on mouse position
+                    const centerX = this.canvas.width / 2;
+                    this.player.angle += (this.mouse.x - centerX) * 0.001;
                     
-                    // Rotate player
-                    this.gameState.player.dir += deltaX * this.gameState.mouse.sensitivity;
-                    
-                    // Reset mouse to center
-                    if (document.pointerLockElement === this.canvas || 
-                        this.canvas.requestPointerLock) {
-                        // Using pointer lock
-                    } else {
-                        // Manual centering
-                        e.target.style.cursor = 'none';
-                        const fakeEvent = new MouseEvent('mousemove', {
-                            clientX: centerX,
-                            clientY: centerY
-                        });
-                        document.dispatchEvent(fakeEvent);
+                    // Reset mouse to center (simulated)
+                    if (this.mouseDown) {
+                        // In a real game, you'd use pointer lock
+                        this.canvas.style.cursor = 'none';
                     }
                 });
                 
-                // Request pointer lock
+                // Click to "lock" cursor
                 this.canvas.addEventListener('click', () => {
+                    this.canvas.requestPointerLock = this.canvas.requestPointerLock || 
+                                                    this.canvas.mozRequestPointerLock ||
+                                                    this.canvas.webkitRequestPointerLock;
                     if (this.canvas.requestPointerLock) {
                         this.canvas.requestPointerLock();
                     }
                 });
-                
-                // Handle pointer lock change
-                document.addEventListener('pointerlockchange', () => {
-                    if (document.pointerLockElement === this.canvas) {
-                        // Pointer locked
-                    }
-                });
-            }
-            
-            setupHUD() {
-                this.updateHUD();
-                this.updateWeaponDisplay();
             }
             
             updateHUD() {
-                const healthPercent = (this.gameState.player.health / this.gameState.player.maxHealth) * 100;
-                document.getElementById('healthFill').style.width = healthPercent + '%';
-                document.getElementById('healthText').textContent = 
-                    `HEALTH: ${Math.floor(this.gameState.player.health)}`;
-                document.getElementById('ammo').textContent = 
-                    this.gameState.player.ammo.toString().padStart(2, '0');
-            }
-            
-            updateWeaponDisplay() {
-                const weaponElement = document.getElementById('weapon');
-                const weaponName = this.gameState.player.weapons[this.gameState.player.currentWeapon];
-                const texture = this.textures.weapons[weaponName];
-                
-                if (texture) {
-                    weaponElement.style.backgroundImage = `url(${texture.toDataURL()})`;
-                    weaponElement.style.backgroundSize = 'contain';
-                    weaponElement.style.backgroundRepeat = 'no-repeat';
-                    weaponElement.style.backgroundPosition = 'center';
-                }
+                document.getElementById('health').textContent = `HEALTH: ${this.player.health}`;
+                document.getElementById('ammo').textContent = `AMMO: ${this.player.ammo}`;
+                document.getElementById('weapon').textContent = `WEAPON: ${this.player.weapons[this.player.weapon]}`;
             }
             
             shoot() {
-                if (this.gameState.player.ammo <= 0) {
-                    // Dry fire sound/effect
+                if (this.player.ammo <= 0) {
+                    console.log("Out of ammo!");
                     return;
                 }
                 
-                // Use ammo
-                this.gameState.player.ammo--;
-                
-                // Weapon fire animation
-                const weaponElement = document.getElementById('weapon');
-                weaponElement.classList.remove('fire');
-                void weaponElement.offsetWidth; // Trigger reflow
-                weaponElement.classList.add('fire');
-                
-                // Check if we hit an enemy
-                const fov = Math.PI / 3; // Field of view
-                const rayAngle = this.gameState.player.dir;
-                
-                // Simple raycast for hit detection
-                let hitEnemy = null;
-                let closestDistance = Infinity;
-                
-                for (const enemy of this.gameState.enemies) {
-                    if (enemy.health <= 0) continue;
-                    
-                    // Calculate angle to enemy
-                    const dx = enemy.x - this.gameState.player.x;
-                    const dy = enemy.y - this.gameState.player.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    const angleToEnemy = Math.atan2(dy, dx);
-                    
-                    // Check if enemy is within FOV
-                    let angleDiff = angleToEnemy - rayAngle;
-                    
-                    // Normalize angle
-                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
-                    
-                    if (Math.abs(angleDiff) < fov / 2 && distance < 10) {
-                        if (distance < closestDistance) {
-                            closestDistance = distance;
-                            hitEnemy = enemy;
-                        }
-                    }
-                }
-                
-                // Damage enemy if hit
-                if (hitEnemy) {
-                    const damage = this.getWeaponDamage(this.gameState.player.currentWeapon);
-                    hitEnemy.health -= damage;
-                    
-                    // Blood particle effect
-                    this.createBloodParticles(hitEnemy.x, hitEnemy.y);
-                    
-                    // Check if enemy died
-                    if (hitEnemy.health <= 0) {
-                        this.createDeathParticles(hitEnemy.x, hitEnemy.y);
-                        this.showMessage("DEMON SLAIN", 1000);
-                    }
-                }
-                
-                // Muzzle flash particles
-                this.createMuzzleFlash();
-                
-                // Update HUD
+                this.player.ammo--;
                 this.updateHUD();
                 
-                // Play sound (simulated)
-                this.playSound('gunshot');
-            }
-            
-            getWeaponDamage(weaponIndex) {
-                switch(weaponIndex) {
-                    case 0: return 20; // Fist
-                    case 1: return 25; // Pistol
-                    case 2: return 50; // Shotgun
-                    case 3: return 15; // Chaingun (per bullet)
-                    default: return 10;
-                }
-            }
-            
-            createBloodParticles(x, y) {
-                for (let i = 0; i < 20; i++) {
-                    this.gameState.particles.push({
-                        x: x,
-                        y: y,
-                        vx: (Math.random() - 0.5) * 0.2,
-                        vy: (Math.random() - 0.5) * 0.2,
-                        life: 1.0,
-                        color: '#ff0000',
-                        size: Math.random() * 0.1 + 0.05,
-                        type: 'blood'
-                    });
-                }
-            }
-            
-            createDeathParticles(x, y) {
-                for (let i = 0; i < 50; i++) {
-                    this.gameState.particles.push({
-                        x: x,
-                        y: y,
-                        vx: (Math.random() - 0.5) * 0.3,
-                        vy: (Math.random() - 0.5) * 0.3,
-                        life: 1.5,
-                        color: '#8b0000',
-                        size: Math.random() * 0.2 + 0.1,
-                        type: 'death'
-                    });
-                }
-            }
-            
-            createMuzzleFlash() {
-                for (let i = 0; i < 10; i++) {
-                    const angle = this.gameState.player.dir + (Math.random() - 0.5) * 0.5;
-                    const distance = 0.3;
+                // Check if we hit an enemy
+                const rayAngle = this.player.angle;
+                const rayStep = 0.1;
+                let distance = 0;
+                
+                while (distance < 10) {
+                    const checkX = this.player.x + Math.cos(rayAngle) * distance;
+                    const checkY = this.player.y + Math.sin(rayAngle) * distance;
                     
-                    this.gameState.particles.push({
-                        x: this.gameState.player.x + Math.cos(angle) * distance,
-                        y: this.gameState.player.y + Math.sin(angle) * distance,
-                        vx: Math.cos(angle) * 0.5,
-                        vy: Math.sin(angle) * 0.5,
-                        life: 0.3,
-                        color: '#ffff00',
-                        size: Math.random() * 0.2 + 0.1,
-                        type: 'muzzle'
-                    });
+                    // Check enemies
+                    for (let i = 0; i < this.enemies.length; i++) {
+                        const enemy = this.enemies[i];
+                        if (enemy.health > 0) {
+                            const distToEnemy = Math.sqrt(
+                                Math.pow(checkX - enemy.x, 2) + 
+                                Math.pow(checkY - enemy.y, 2)
+                            );
+                            
+                            if (distToEnemy < 0.5) {
+                                enemy.health -= 25;
+                                console.log(`Hit! Enemy health: ${enemy.health}`);
+                                
+                                if (enemy.health <= 0) {
+                                    console.log("Enemy killed!");
+                                }
+                                
+                                // Create blood effect
+                                this.createBloodEffect(enemy.x, enemy.y);
+                                return;
+                            }
+                        }
+                    }
+                    
+                    distance += rayStep;
                 }
             }
             
-            playSound(soundName) {
-                // In a real implementation, you would play actual sounds
-                console.log(`Playing sound: ${soundName}`);
-            }
-            
-            showMessage(text, duration) {
-                const messageElement = document.getElementById('message');
-                messageElement.textContent = text;
-                messageElement.style.opacity = 1;
-                
-                setTimeout(() => {
-                    messageElement.style.opacity = 0;
-                }, duration);
-            }
-            
-            update(deltaTime) {
-                if (!this.gameState.running) return;
-                
-                // Update player movement
-                this.updatePlayerMovement(deltaTime);
-                
-                // Update enemies
-                this.updateEnemies(deltaTime);
-                
-                // Update particles
-                this.updateParticles(deltaTime);
-                
-                // Update player bobbing (head bob effect)
-                this.gameState.player.bob += deltaTime * 10;
-                
-                // Check player health
-                if (this.gameState.player.health <= 0) {
-                    this.gameOver();
+            createBloodEffect(x, y) {
+                // Simple particle effect
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => {
+                        const particleX = x + (Math.random() - 0.5) * 0.5;
+                        const particleY = y + (Math.random() - 0.5) * 0.5;
+                        
+                        // Draw blood splatter
+                        this.ctx.fillStyle = '#8b0000';
+                        this.ctx.beginPath();
+                        this.ctx.arc(
+                            particleX * 100, particleY * 100,
+                            Math.random() * 10 + 5,
+                            0, Math.PI * 2
+                        );
+                        this.ctx.fill();
+                    }, i * 50);
                 }
             }
             
-            updatePlayerMovement(deltaTime) {
-                const player = this.gameState.player;
-                const speed = player.speed * deltaTime * 60;
-                const rotSpeed = player.rotSpeed * deltaTime * 60;
+            update() {
+                // Handle movement
+                const speed = 0.1;
+                const rotSpeed = 0.05;
                 
                 // Rotation
-                if (this.gameState.keys['q']) player.dir -= rotSpeed;
-                if (this.gameState.keys['e']) player.dir += rotSpeed;
+                if (this.keys['q']) this.player.angle -= rotSpeed;
+                if (this.keys['e']) this.player.angle += rotSpeed;
                 
                 // Movement
                 let moveX = 0;
                 let moveY = 0;
                 
-                if (this.gameState.keys['w']) {
-                    moveX += Math.cos(player.dir) * speed;
-                    moveY += Math.sin(player.dir) * speed;
+                if (this.keys['w']) {
+                    moveX += Math.cos(this.player.angle) * speed;
+                    moveY += Math.sin(this.player.angle) * speed;
                 }
-                if (this.gameState.keys['s']) {
-                    moveX -= Math.cos(player.dir) * speed;
-                    moveY -= Math.sin(player.dir) * speed;
+                if (this.keys['s']) {
+                    moveX -= Math.cos(this.player.angle) * speed;
+                    moveY -= Math.sin(this.player.angle) * speed;
                 }
-                if (this.gameState.keys['a']) {
-                    moveX += Math.cos(player.dir - Math.PI/2) * speed;
-                    moveY += Math.sin(player.dir - Math.PI/2) * speed;
+                if (this.keys['a']) {
+                    moveX += Math.cos(this.player.angle - Math.PI/2) * speed;
+                    moveY += Math.sin(this.player.angle - Math.PI/2) * speed;
                 }
-                if (this.gameState.keys['d']) {
-                    moveX += Math.cos(player.dir + Math.PI/2) * speed;
-                    moveY += Math.sin(player.dir + Math.PI/2) * speed;
-                }
-                
-                // Running
-                if (this.gameState.keys['shift']) {
-                    moveX *= 1.5;
-                    moveY *= 1.5;
+                if (this.keys['d']) {
+                    moveX += Math.cos(this.player.angle + Math.PI/2) * speed;
+                    moveY += Math.sin(this.player.angle + Math.PI/2) * speed;
                 }
                 
-                // Collision detection
-                const newX = player.x + moveX;
-                const newY = player.y + moveY;
+                // Check collision
+                const newX = this.player.x + moveX;
+                const newY = this.player.y + moveY;
                 
-                if (this.canMoveTo(newX, player.y)) {
-                    player.x = newX;
+                if (this.canMoveTo(newX, this.player.y)) {
+                    this.player.x = newX;
                 }
-                if (this.canMoveTo(player.x, newY)) {
-                    player.y = newY;
+                if (this.canMoveTo(this.player.x, newY)) {
+                    this.player.y = newY;
                 }
                 
-                // Update camera plane for FOV
-                player.planeX = Math.cos(player.dir + Math.PI/2) * 0.66;
-                player.planeY = Math.sin(player.dir + Math.PI/2) * 0.66;
+                // Update enemies
+                this.updateEnemies();
+                
+                // Update HUD
+                this.updateHUD();
             }
             
             canMoveTo(x, y) {
                 const mapX = Math.floor(x);
                 const mapY = Math.floor(y);
                 
-                // Check bounds
-                if (mapX < 0 || mapX >= this.gameState.map.length ||
-                    mapY < 0 || mapY >= this.gameState.map[0].length) {
+                if (mapX < 0 || mapX >= this.map.length || 
+                    mapY < 0 || mapY >= this.map[0].length) {
                     return false;
                 }
                 
-                // Check wall collision
-                return this.gameState.map[mapX][mapY] === 0;
+                return this.map[mapX][mapY] === 0;
             }
             
-            updateEnemies(deltaTime) {
-                const currentTime = Date.now();
-                
-                for (const enemy of this.gameState.enemies) {
+            updateEnemies() {
+                // Simple AI: move toward player
+                for (const enemy of this.enemies) {
                     if (enemy.health <= 0) continue;
                     
-                    // Calculate distance to player
-                    const dx = this.gameState.player.x - enemy.x;
-                    const dy = this.gameState.player.y - enemy.y;
+                    const dx = this.player.x - enemy.x;
+                    const dy = this.player.y - enemy.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
                     
-                    // Update enemy state
-                    if (distance < enemy.attackRange) {
-                        enemy.state = 'attacking';
-                        
-                        // Attack if cooldown is over
-                        if (currentTime - enemy.lastAttack > 1000) { // 1 second cooldown
-                            this.gameState.player.health -= enemy.attackDamage;
-                            enemy.lastAttack = currentTime;
-                            
-                            // Damage flash effect
-                            document.body.classList.add('damage');
-                            setTimeout(() => {
-                                document.body.classList.remove('damage');
-                            }, 300);
-                            
-                            this.updateHUD();
-                        }
-                    } else if (distance < 10) {
-                        enemy.state = 'chasing';
-                        
+                    if (distance < 5) {
                         // Move toward player
-                        const angle = Math.atan2(dy, dx);
-                        enemy.x += Math.cos(angle) * enemy.speed * deltaTime * 60;
-                        enemy.y += Math.sin(angle) * enemy.speed * deltaTime * 60;
-                    } else {
-                        enemy.state = 'idle';
+                        const speed = 0.02;
+                        enemy.x += (dx / distance) * speed;
+                        enemy.y += (dy / distance) * speed;
+                        
+                        // Attack if close enough
+                        if (distance < 1) {
+                            this.player.health -= 1;
+                            if (this.player.health <= 0) {
+                                this.gameOver();
+                            }
+                        }
                     }
                 }
-                
-                // Remove dead enemies
-                this.gameState.enemies = this.gameState.enemies.filter(enemy => enemy.health > 0);
             }
             
-            updateParticles(deltaTime) {
-                for (let i = this.gameState.particles.length - 1; i >= 0; i--) {
-                    const particle = this.gameState.particles[i];
-                    
-                    // Update position
-                    particle.x += particle.vx * deltaTime * 60;
-                    particle.y += particle.vy * deltaTime * 60;
-                    
-                    // Update life
-                    particle.life -= deltaTime;
-                    
-                    // Remove dead particles
-                    if (particle.life <= 0) {
-                        this.gameState.particles.splice(i, 1);
-                    }
-                }
+            gameOver() {
+                alert("YOU DIED!\n\nPress OK to restart.");
+                document.location.reload();
             }
             
             draw() {
-                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                // Clear screen
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
                 
-                // Raycast rendering
-                this.renderWalls();
+                // Draw floor and ceiling
+                this.drawFloorAndCeiling();
                 
-                // Render floor and ceiling
-                this.renderFloorAndCeiling();
+                // Raycast walls
+                this.raycastWalls();
                 
-                // Render sprites (enemies, items)
-                this.renderSprites();
-                
-                // Render particles
-                this.renderParticles();
+                // Draw enemies
+                this.drawEnemies();
                 
                 // Draw minimap
                 this.drawMinimap();
             }
             
-            renderWalls() {
-                const { player, map } = this.gameState;
+            drawFloorAndCeiling() {
+                // Simple gradient floor/ceiling
+                const height = this.canvas.height;
+                
+                // Floor (bottom half)
+                for (let y = height/2; y < height; y++) {
+                    const darkness = (y - height/2) / (height/2);
+                    this.ctx.fillStyle = `rgb(${Math.floor(50 * (1 - darkness))}, 
+                                               ${Math.floor(50 * (1 - darkness))}, 
+                                               ${Math.floor(50 * (1 - darkness))})`;
+                    this.ctx.fillRect(0, y, this.canvas.width, 1);
+                }
+                
+                // Ceiling (top half)
+                for (let y = 0; y < height/2; y++) {
+                    const darkness = 1 - (y / (height/2));
+                    this.ctx.fillStyle = `rgb(${Math.floor(20 * darkness)}, 
+                                               ${Math.floor(20 * darkness)}, 
+                                               ${Math.floor(20 * darkness)})`;
+                    this.ctx.fillRect(0, y, this.canvas.width, 1);
+                }
+            }
+            
+            raycastWalls() {
                 const width = this.canvas.width;
                 const height = this.canvas.height;
                 
                 for (let x = 0; x < width; x++) {
-                    // Calculate ray position and direction
-                    const cameraX = 2 * x / width - 1;
-                    const rayDirX = player.dir + player.planeX * cameraX;
-                    const rayDirY = player.planeY * cameraX;
+                    // Calculate ray angle
+                    const rayAngle = this.player.angle - this.FOV/2 + 
+                                    (x / width) * this.FOV;
                     
-                    // Which box of the map we're in
-                    let mapX = Math.floor(player.x);
-                    let mapY = Math.floor(player.y);
+                    // Ray direction
+                    const rayDirX = Math.cos(rayAngle);
+                    const rayDirY = Math.sin(rayAngle);
                     
-                    // Length of ray from current position to next x or y-side
+                    // Player position in map
+                    let mapX = Math.floor(this.player.x);
+                    let mapY = Math.floor(this.player.y);
+                    
+                    // Ray length from current position to next grid line
                     let deltaDistX = Math.abs(1 / rayDirX);
                     let deltaDistY = Math.abs(1 / rayDirY);
                     
-                    let perpWallDist;
-                    
-                    // What direction to step in x or y-direction (either +1 or -1)
-                    let stepX, stepY;
-                    
-                    // Length of ray from one x or y-side to next x or y-side
                     let sideDistX, sideDistY;
+                    let stepX, stepY;
+                    let hit = 0;
+                    let side = 0;
                     
                     // Calculate step and initial sideDist
                     if (rayDirX < 0) {
                         stepX = -1;
-                        sideDistX = (player.x - mapX) * deltaDistX;
+                        sideDistX = (this.player.x - mapX) * deltaDistX;
                     } else {
                         stepX = 1;
-                        sideDistX = (mapX + 1.0 - player.x) * deltaDistX;
+                        sideDistX = (mapX + 1 - this.player.x) * deltaDistX;
                     }
                     
                     if (rayDirY < 0) {
                         stepY = -1;
-                        sideDistY = (player.y - mapY) * deltaDistY;
+                        sideDistY = (this.player.y - mapY) * deltaDistY;
                     } else {
                         stepY = 1;
-                        sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
+                        sideDistY = (mapY + 1 - this.player.y) * deltaDistY;
                     }
                     
-                    // Perform DDA (Digital Differential Analysis)
-                    let hit = 0; // Was there a wall hit?
-                    let side; // Was a NS or a EW wall hit?
-                    
+                    // DDA algorithm
                     while (hit === 0) {
-                        // Jump to next map square, OR in x-direction, OR in y-direction
                         if (sideDistX < sideDistY) {
                             sideDistX += deltaDistX;
                             mapX += stepX;
@@ -1252,254 +486,157 @@
                             side = 1;
                         }
                         
-                        // Check if ray has hit a wall
-                        if (mapX >= 0 && mapX < map.length && 
-                            mapY >= 0 && mapY < map[0].length) {
-                            if (map[mapX][mapY] > 0) hit = 1;
+                        // Check if ray hit a wall
+                        if (mapX >= 0 && mapX < this.map.length && 
+                            mapY >= 0 && mapY < this.map[0].length) {
+                            if (this.map[mapX][mapY] > 0) {
+                                hit = 1;
+                            }
                         } else {
-                            hit = 1; // Hit boundary
+                            hit = 1;
                         }
                     }
                     
-                    // Calculate distance projected on camera direction
+                    // Calculate distance to wall
+                    let perpWallDist;
                     if (side === 0) {
-                        perpWallDist = (mapX - player.x + (1 - stepX) / 2) / rayDirX;
+                        perpWallDist = (mapX - this.player.x + (1 - stepX) / 2) / rayDirX;
                     } else {
-                        perpWallDist = (mapY - player.y + (1 - stepY) / 2) / rayDirY;
+                        perpWallDist = (mapY - this.player.y + (1 - stepY) / 2) / rayDirY;
                     }
                     
-                    // Calculate height of line to draw on screen
-                    const lineHeight = Math.floor(height / perpWallDist);
+                    // Calculate line height
+                    const lineHeight = Math.min(height, height / perpWallDist);
                     
-                    // Calculate lowest and highest pixel to fill in current stripe
-                    let drawStart = -lineHeight / 2 + height / 2;
-                    if (drawStart < 0) drawStart = 0;
-                    let drawEnd = lineHeight / 2 + height / 2;
-                    if (drawEnd >= height) drawEnd = height - 1;
+                    // Calculate draw start and end
+                    const drawStart = Math.max(-lineHeight/2 + height/2, 0);
+                    const drawEnd = Math.min(lineHeight/2 + height/2, height);
                     
                     // Choose wall color based on map value and side
                     let color;
-                    const wallType = map[mapX][mapY];
-                    
-                    switch(wallType) {
-                        case 1: color = side === 0 ? '#ff4444' : '#cc4444'; break;
-                        case 2: color = side === 0 ? '#44ff44' : '#44cc44'; break;
-                        case 3: color = side === 0 ? '#4444ff' : '#4444cc'; break;
-                        case 4: color = side === 0 ? '#ffff44' : '#cccc44'; break;
-                        case 5: color = side === 0 ? '#ff44ff' : '#cc44cc'; break;
-                        default: color = side === 0 ? '#888888' : '#666666';
+                    if (this.map[mapX][mapY] === 1) {
+                        color = side === 0 ? this.colors.wall1 : this.colors.wall2;
+                    } else {
+                        color = '#666';
                     }
                     
                     // Darken color based on distance
-                    const darkness = Math.min(1.0, perpWallDist / 10);
+                    const darkness = Math.min(0.8, perpWallDist / 10);
                     const rgb = this.hexToRgb(color);
-                    const darkened = {
-                        r: Math.floor(rgb.r * (1 - darkness * 0.7)),
-                        g: Math.floor(rgb.g * (1 - darkness * 0.7)),
-                        b: Math.floor(rgb.b * (1 - darkness * 0.7))
-                    };
+                    const darkened = `rgb(${Math.floor(rgb.r * (1 - darkness))}, 
+                                          ${Math.floor(rgb.g * (1 - darkness))}, 
+                                          ${Math.floor(rgb.b * (1 - darkness))})`;
                     
                     // Draw the wall slice
-                    this.ctx.fillStyle = `rgb(${darkened.r}, ${darkened.g}, ${darkened.b})`;
+                    this.ctx.fillStyle = darkened;
                     this.ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
-                    
-                    // Draw floor and ceiling for this slice
-                    this.drawFloorCeilingSlice(x, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY);
                 }
             }
             
-            drawFloorCeilingSlice(x, drawStart, drawEnd, perpWallDist, rayDirX, rayDirY) {
-                const { player } = this.gameState;
+            drawEnemies() {
+                const width = this.canvas.width;
                 const height = this.canvas.height;
                 
-                // Draw floor
-                for (let y = drawEnd; y < height; y++) {
-                    // Current y position compared to the center of the screen
-                    const currentDist = height / (2.0 * y - height);
+                for (const enemy of this.enemies) {
+                    if (enemy.health <= 0) continue;
                     
-                    const weight = currentDist / perpWallDist;
+                    // Calculate enemy position relative to player
+                    const relX = enemy.x - this.player.x;
+                    const relY = enemy.y - this.player.y;
                     
-                    const currentFloorX = weight * player.x + (1.0 - weight) * player.x;
-                    const currentFloorY = weight * player.y + (1.0 - weight) * player.y;
+                    // Distance to enemy
+                    const distance = Math.sqrt(relX * relX + relY * relY);
                     
-                    const floorTexX = Math.floor(currentFloorX * 64) % 64;
-                    const floorTexY = Math.floor(currentFloorY * 64) % 64;
+                    // Calculate angle to enemy
+                    const enemyAngle = Math.atan2(relY, relX) - this.player.angle;
                     
-                    // Get floor color from texture
-                    const floorData = this.textures.floor.getContext('2d')
-                        .getImageData(floorTexX * 4, floorTexY * 4, 1, 1).data;
-                    
-                    // Darken based on distance
-                    const darkness = Math.min(0.8, currentDist / 15);
-                    this.ctx.fillStyle = `rgba(${floorData[0]}, ${floorData[1]}, ${floorData[2]}, ${1 - darkness})`;
-                    this.ctx.fillRect(x, y, 1, 1);
-                    
-                    // Draw ceiling (mirror of floor)
-                    const ceilingY = height - y;
-                    const ceilingData = this.textures.ceiling.getContext('2d')
-                        .getImageData(floorTexX * 4, floorTexY * 4, 1, 1).data;
-                    
-                    this.ctx.fillStyle = `rgba(${ceilingData[0]}, ${ceilingData[1]}, ${ceilingData[2]}, ${1 - darkness * 0.5})`;
-                    this.ctx.fillRect(x, ceilingY, 1, 1);
-                }
-            }
-            
-            renderSprites() {
-                // Sort sprites by distance (painter's algorithm)
-                const sprites = [...this.gameState.enemies].map(enemy => {
-                    const dx = enemy.x - this.gameState.player.x;
-                    const dy = enemy.y - this.gameState.player.y;
-                    return {
-                        ...enemy,
-                        distance: dx * dx + dy * dy
-                    };
-                }).sort((a, b) => b.distance - a.distance);
-                
-                // Render each sprite
-                for (const sprite of sprites) {
-                    if (sprite.health <= 0) continue;
-                    
-                    // Translate sprite position to relative to camera
-                    const spriteX = sprite.x - this.gameState.player.x;
-                    const spriteY = sprite.y - this.gameState.player.y;
-                    
-                    // Transform sprite with the inverse camera matrix
-                    const invDet = 1.0 / (this.gameState.player.planeX * Math.sin(this.gameState.player.dir) - 
-                                          Math.cos(this.gameState.player.dir) * this.gameState.player.planeY);
-                    
-                    const transformX = invDet * (Math.sin(this.gameState.player.dir) * spriteX - 
-                                                Math.cos(this.gameState.player.dir) * spriteY);
-                    const transformY = invDet * (-this.gameState.player.planeY * spriteX + 
-                                                this.gameState.player.planeX * spriteY);
-                    
-                    if (transformY > 0) { // Sprite is in front of camera
-                        const spriteScreenX = Math.floor((this.canvas.width / 2) * (1 + transformX / transformY));
+                    // Check if enemy is in FOV
+                    if (Math.abs(enemyAngle) < this.FOV/2 && distance < 10) {
+                        // Calculate screen position
+                        const screenX = (enemyAngle + this.FOV/2) / this.FOV * width;
                         
-                        // Calculate height of the sprite on screen
-                        const spriteHeight = Math.abs(Math.floor(this.canvas.height / transformY));
+                        // Calculate size based on distance
+                        const size = Math.max(20, 100 / distance);
                         
-                        // Calculate lowest and highest pixel to fill in current stripe
-                        const drawStartY = -spriteHeight / 2 + this.canvas.height / 2;
-                        const drawEndY = spriteHeight / 2 + this.canvas.height / 2;
+                        // Draw enemy
+                        this.ctx.fillStyle = enemy.health > 50 ? '#ff0000' : '#aa0000';
+                        this.ctx.fillRect(
+                            screenX - size/2,
+                            height/2 - size/2,
+                            size,
+                            size
+                        );
                         
-                        // Calculate width of the sprite
-                        const spriteWidth = Math.abs(Math.floor(this.canvas.height / transformY));
-                        const drawStartX = -spriteWidth / 2 + spriteScreenX;
-                        const drawEndX = spriteWidth / 2 + spriteScreenX;
-                        
-                        // Draw sprite
-                        if (sprite.sprite) {
-                            this.ctx.drawImage(
-                                sprite.sprite,
-                                drawStartX, drawStartY,
-                                spriteWidth, spriteHeight
-                            );
-                        }
-                        
-                        // Draw health bar above sprite
-                        if (sprite.health < sprite.maxHealth) {
-                            const healthPercent = sprite.health / sprite.maxHealth;
-                            const barWidth = spriteWidth * 0.8;
-                            const barHeight = 5;
-                            const barX = drawStartX + spriteWidth * 0.1;
-                            const barY = drawStartY - 10;
-                            
-                            // Background
-                            this.ctx.fillStyle = '#000000';
-                            this.ctx.fillRect(barX, barY, barWidth, barHeight);
-                            
-                            // Health
-                            this.ctx.fillStyle = '#ff0000';
-                            this.ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
-                        }
-                    }
-                }
-            }
-            
-            renderParticles() {
-                for (const particle of this.gameState.particles) {
-                    // Transform particle to screen space
-                    const dx = particle.x - this.gameState.player.x;
-                    const dy = particle.y - this.gameState.player.y;
-                    
-                    const invDet = 1.0 / (this.gameState.player.planeX * Math.sin(this.gameState.player.dir) - 
-                                          Math.cos(this.gameState.player.dir) * this.gameState.player.planeY);
-                    
-                    const transformX = invDet * (Math.sin(this.gameState.player.dir) * dx - 
-                                                Math.cos(this.gameState.player.dir) * dy);
-                    const transformY = invDet * (-this.gameState.player.planeY * dx + 
-                                                this.gameState.player.planeX * dy);
-                    
-                    if (transformY > 0) {
-                        const screenX = Math.floor((this.canvas.width / 2) * (1 + transformX / transformY));
-                        const screenY = Math.floor(this.canvas.height / 2);
-                        
-                        const size = Math.max(1, particle.size * 100 / transformY);
-                        
-                        this.ctx.fillStyle = particle.color;
-                        this.ctx.globalAlpha = particle.life;
-                        this.ctx.beginPath();
-                        this.ctx.arc(screenX, screenY, size, 0, Math.PI * 2);
-                        this.ctx.fill();
-                        this.ctx.globalAlpha = 1.0;
+                        // Draw health bar
+                        const healthPercent = enemy.health / 100;
+                        this.ctx.fillStyle = '#000';
+                        this.ctx.fillRect(screenX - size/2, height/2 - size/2 - 10, size, 5);
+                        this.ctx.fillStyle = '#0f0';
+                        this.ctx.fillRect(screenX - size/2, height/2 - size/2 - 10, size * healthPercent, 5);
                     }
                 }
             }
             
             drawMinimap() {
-                const ctx = this.minimapCtx;
-                const map = this.gameState.map;
-                const cellSize = 200 / map.length;
+                const mapSize = 100;
+                const cellSize = mapSize / this.map.length;
                 
-                // Clear minimap
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, 200, 200);
+                // Draw map background
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillRect(10, 10, mapSize, mapSize);
                 
                 // Draw walls
-                for (let x = 0; x < map.length; x++) {
-                    for (let y = 0; y < map[0].length; y++) {
-                        if (map[x][y] > 0) {
-                            ctx.fillStyle = '#666666';
-                            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-                            
-                            ctx.strokeStyle = '#444444';
-                            ctx.strokeRect(x * cellSize, y * cellSize, cellSize, cellSize);
+                for (let x = 0; x < this.map.length; x++) {
+                    for (let y = 0; y < this.map[0].length; y++) {
+                        if (this.map[x][y] === 1) {
+                            this.ctx.fillStyle = '#666';
+                            this.ctx.fillRect(
+                                10 + x * cellSize,
+                                10 + y * cellSize,
+                                cellSize,
+                                cellSize
+                            );
                         }
                     }
                 }
                 
                 // Draw player
-                ctx.fillStyle = '#00ff00';
-                ctx.beginPath();
-                ctx.arc(
-                    this.gameState.player.x * cellSize,
-                    this.gameState.player.y * cellSize,
-                    cellSize / 2,
+                this.ctx.fillStyle = '#0f0';
+                this.ctx.beginPath();
+                this.ctx.arc(
+                    10 + this.player.x * cellSize,
+                    10 + this.player.y * cellSize,
+                    cellSize/2,
                     0, Math.PI * 2
                 );
-                ctx.fill();
+                this.ctx.fill();
                 
                 // Draw player direction
-                ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(
-                    this.gameState.player.x * cellSize,
-                    this.gameState.player.y * cellSize
+                this.ctx.strokeStyle = '#0f0';
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(
+                    10 + this.player.x * cellSize,
+                    10 + this.player.y * cellSize
                 );
-                ctx.lineTo(
-                    (this.gameState.player.x + Math.cos(this.gameState.player.dir) * 2) * cellSize,
-                    (this.gameState.player.y + Math.sin(this.gameState.player.dir) * 2) * cellSize
+                this.ctx.lineTo(
+                    10 + (this.player.x + Math.cos(this.player.angle)) * cellSize,
+                    10 + (this.player.y + Math.sin(this.player.angle)) * cellSize
                 );
-                ctx.stroke();
+                this.ctx.stroke();
                 
-                // Draw enemies
-                for (const enemy of this.gameState.enemies) {
+                // Draw enemies on minimap
+                for (const enemy of this.enemies) {
                     if (enemy.health > 0) {
-                        ctx.fillStyle = enemy.health < 50 ? '#ff8800' : '#ff0000';
-                        ctx.beginPath();
-                        ctx.arc(enemy.x * cellSize, enemy.y * cellSize, cellSize / 2, 0, Math.PI * 2);
-                        ctx.fill();
+                        this.ctx.fillStyle = '#f00';
+                        this.ctx.beginPath();
+                        this.ctx.arc(
+                            10 + enemy.x * cellSize,
+                            10 + enemy.y * cellSize,
+                            cellSize/2,
+                            0, Math.PI * 2
+                        );
+                        this.ctx.fill();
                     }
                 }
             }
@@ -1513,35 +650,17 @@
                 } : { r: 0, g: 0, b: 0 };
             }
             
-            gameOver() {
-                this.gameState.running = false;
-                this.showMessage("YOU DIED", 3000);
-                
-                setTimeout(() => {
-                    if (confirm("HELLFIRE PROTOCOL FAILED\n\nTry again?")) {
-                        document.location.reload();
-                    }
-                }, 3000);
-            }
-            
             gameLoop() {
-                const currentTime = Date.now();
-                this.gameState.deltaTime = (currentTime - this.gameState.lastTime) / 1000;
-                this.gameState.lastTime = currentTime;
-                
-                if (this.gameState.running) {
-                    this.update(this.gameState.deltaTime);
-                    this.draw();
-                    this.gameState.frame++;
-                }
-                
+                this.update();
+                this.draw();
                 requestAnimationFrame(() => this.gameLoop());
             }
         }
         
-        // Start the game when page loads
+        // Start the game
         window.addEventListener('load', () => {
-            window.game = new DoomEngine();
+            const game = new DoomGame();
+            game.init();
         });
     </script>
 </body>
