@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOOM 1993 Clone - Enhanced Version</title>
+    <title>DOOM 1993 Clone - Working Raycasting</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
         
@@ -23,7 +23,6 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            cursor: none;
         }
 
         #menuScreen {
@@ -315,7 +314,7 @@
     
     <!-- Game Container -->
     <div id="gameContainer">
-        <canvas id="gameCanvas" width="1200" height="800"></canvas>
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
         
         <div id="hud">
             <div id="healthDisplay">HEALTH: 100</div>
@@ -343,7 +342,7 @@
     <script>
         // ==================== GAME SETTINGS ====================
         const settings = {
-            mouseSensitivity: 0.002, // MUCH lower default sensitivity
+            mouseSensitivity: 0.002,
             enemyDamage: 10,
             playerSpeed: 0.08,
             volume: 0.7
@@ -443,14 +442,17 @@
             game.canvas = document.getElementById('gameCanvas');
             game.ctx = game.canvas.getContext('2d');
             
-            // Generate a better map with collision
+            // Generate a simple but visible map
             generateMap();
             
-            // Spawn enemies with proper collision
+            // Spawn enemies
             spawnEnemies();
             
             // Setup input
             setupInput();
+            
+            // Update HUD
+            updateHUD();
             
             // Start game loop
             game.running = true;
@@ -459,87 +461,33 @@
         }
 
         function generateMap() {
-            // Create a larger 15x15 map with proper walls
-            const size = 15;
-            game.map = [];
+            // Simple 10x10 map that's easy to see
+            game.map = [
+                [1,1,1,1,1,1,1,1,1,1],
+                [1,0,0,0,0,0,0,0,0,1],
+                [1,0,1,0,1,0,1,0,0,1],
+                [1,0,0,0,0,0,0,0,0,1],
+                [1,0,1,0,1,0,1,0,0,1],
+                [1,0,0,0,0,0,0,0,0,1],
+                [1,0,1,0,1,0,1,0,0,1],
+                [1,0,0,0,0,0,0,0,0,1],
+                [1,0,0,0,0,0,0,0,0,1],
+                [1,1,1,1,1,1,1,1,1,1]
+            ];
             
-            // Initialize map with walls
-            for (let x = 0; x < size; x++) {
-                game.map[x] = [];
-                for (let y = 0; y < size; y++) {
-                    // Outer walls
-                    if (x === 0 || y === 0 || x === size-1 || y === size-1) {
-                        game.map[x][y] = 1;
-                    } else {
-                        game.map[x][y] = 0;
-                    }
-                }
-            }
-            
-            // Add interior walls and rooms
-            createRoom(2, 2, 4, 4);
-            createRoom(9, 2, 4, 4);
-            createRoom(2, 9, 4, 4);
-            createRoom(9, 9, 4, 4);
-            
-            // Add corridors
-            for (let x = 6; x < 9; x++) {
-                game.map[x][7] = 0;
-                game.map[7][x] = 0;
-            }
-            
-            // Add some pillars
-            game.map[4][4] = 1;
-            game.map[10][4] = 1;
-            game.map[4][10] = 1;
-            game.map[10][10] = 1;
-            
-            // Set player start position in a safe area
+            // Set player start position
             game.player.x = 1.5;
             game.player.y = 1.5;
-        }
-
-        function createRoom(startX, startY, width, height) {
-            for (let x = startX; x < startX + width; x++) {
-                for (let y = startY; y < startY + height; y++) {
-                    if (x === startX || y === startY || x === startX + width - 1 || y === startY + height - 1) {
-                        game.map[x][y] = 1; // Walls
-                    } else {
-                        game.map[x][y] = 0; // Floor
-                    }
-                }
-            }
+            game.player.angle = 0;
         }
 
         function spawnEnemies() {
             game.enemies = [];
             
-            // Spawn enemies only in open areas
-            const spawnPoints = [
-                { x: 3.5, y: 3.5 },
-                { x: 11.5, y: 3.5 },
-                { x: 3.5, y: 11.5 },
-                { x: 11.5, y: 11.5 },
-                { x: 7.5, y: 7.5 }
-            ];
-            
-            spawnPoints.forEach(point => {
-                // Check if spawn point is valid (not in wall)
-                const mapX = Math.floor(point.x);
-                const mapY = Math.floor(point.y);
-                
-                if (game.map[mapX][mapY] === 0) {
-                    game.enemies.push({
-                        x: point.x,
-                        y: point.y,
-                        health: 100,
-                        type: 'IMP',
-                        speed: 0.02,
-                        attackCooldown: 0,
-                        lastAttack: 0
-                    });
-                }
-            });
+            // Spawn enemies in open areas
+            game.enemies.push({ x: 5.5, y: 5.5, health: 100, type: 'IMP', speed: 0.02 });
+            game.enemies.push({ x: 3.5, y: 3.5, health: 100, type: 'IMP', speed: 0.02 });
+            game.enemies.push({ x: 7.5, y: 7.5, health: 100, type: 'IMP', speed: 0.02 });
             
             updateEnemyDisplay();
         }
@@ -572,6 +520,7 @@
                     } else {
                         pauseGame();
                     }
+                    e.preventDefault();
                 }
             });
             
@@ -585,39 +534,46 @@
                     shoot();
                 }
                 
-                // Request pointer lock when clicking
-                if (!game.mouse.locked && game.canvas.requestPointerLock) {
-                    game.canvas.requestPointerLock();
+                // Request pointer lock
+                if (!game.mouse.locked) {
+                    game.canvas.requestPointerLock = game.canvas.requestPointerLock || 
+                                                   game.canvas.mozRequestPointerLock ||
+                                                   game.canvas.webkitRequestPointerLock;
+                    if (game.canvas.requestPointerLock) {
+                        game.canvas.requestPointerLock();
+                    }
                 }
             });
             
-            // Pointer lock events
-            document.addEventListener('pointerlockchange', () => {
-                game.mouse.locked = document.pointerLockElement === game.canvas;
-            });
-            
-            // Mouse movement with SENSITIVITY CONTROL
+            // Mouse movement with sensitivity
             document.addEventListener('mousemove', (e) => {
-                if (game.mouse.locked && game.running && !game.paused) {
-                    // Use sensitivity setting
+                if (document.pointerLockElement === game.canvas && game.running && !game.paused) {
                     const sensitivity = settings.mouseSensitivity;
-                    
-                    // Much smoother movement with sensitivity control
                     game.player.angle += e.movementX * sensitivity;
                     
-                    // Keep angle in range
+                    // Keep angle normalized
                     if (game.player.angle > Math.PI * 2) game.player.angle -= Math.PI * 2;
                     if (game.player.angle < 0) game.player.angle += Math.PI * 2;
                 }
+            });
+            
+            // Pointer lock change
+            document.addEventListener('pointerlockchange', () => {
+                game.mouse.locked = document.pointerLockElement === game.canvas;
             });
         }
 
         function updateHUD() {
             document.getElementById('healthDisplay').textContent = 
                 `HEALTH: ${Math.max(0, game.player.health)}`;
-            updateAmmoDisplay();
-            updateWeaponDisplay();
-            updateEnemyDisplay();
+            document.getElementById('ammoDisplay').textContent = 
+                `AMMO: ${game.player.ammo}/${game.player.maxAmmo}`;
+            document.getElementById('weaponDisplay').textContent = 
+                `WEAPON: ${game.player.weapons[game.player.weapon]}`;
+            
+            const aliveEnemies = game.enemies.filter(e => e.health > 0).length;
+            document.getElementById('enemyDisplay').textContent = 
+                `ENEMIES: ${aliveEnemies}`;
         }
 
         function updateAmmoDisplay() {
@@ -642,56 +598,36 @@
             game.player.ammo--;
             updateAmmoDisplay();
             
-            // Check for hits
-            const rayAngle = game.player.angle;
-            const rayStep = 0.1;
-            let distance = 0;
-            
-            while (distance < 10) {
-                const checkX = game.player.x + Math.cos(rayAngle) * distance;
-                const checkY = game.player.y + Math.sin(rayAngle) * distance;
-                
-                // Check if we hit a wall
-                const mapX = Math.floor(checkX);
-                const mapY = Math.floor(checkY);
-                
-                if (mapX >= 0 && mapX < game.map.length && 
-                    mapY >= 0 && mapY < game.map[0].length) {
-                    if (game.map[mapX][mapY] === 1) {
-                        break; // Hit wall, stop checking
-                    }
-                }
-                
-                // Check enemies with PROPER COLLISION
-                for (let i = 0; i < game.enemies.length; i++) {
-                    const enemy = game.enemies[i];
-                    if (enemy.health > 0) {
-                        const distToEnemy = Math.sqrt(
-                            Math.pow(checkX - enemy.x, 2) + 
-                            Math.pow(checkY - enemy.y, 2)
-                        );
-                        
-                        if (distToEnemy < 0.3) { // Smaller hit radius
-                            enemy.health -= 25;
-                            
-                            if (enemy.health <= 0) {
-                                console.log("Enemy killed!");
-                            }
-                            
-                            updateEnemyDisplay();
-                            return;
+            // Simple hit detection
+            for (let i = 0; i < game.enemies.length; i++) {
+                const enemy = game.enemies[i];
+                if (enemy.health > 0) {
+                    // Check if enemy is in front of player
+                    const dx = enemy.x - game.player.x;
+                    const dy = enemy.y - game.player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const angleToEnemy = Math.atan2(dy, dx);
+                    
+                    // Check if enemy is within FOV and range
+                    let angleDiff = angleToEnemy - game.player.angle;
+                    while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                    while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                    
+                    if (Math.abs(angleDiff) < Math.PI / 6 && distance < 5) {
+                        enemy.health -= 25;
+                        if (enemy.health <= 0) {
+                            console.log("Enemy killed!");
                         }
+                        updateEnemyDisplay();
+                        break;
                     }
                 }
-                
-                distance += rayStep;
             }
         }
 
         function updatePlayer(deltaTime) {
             if (game.paused) return;
             
-            // Base speed with delta time
             const speed = game.player.speed * deltaTime * 60;
             const rotSpeed = 0.05 * deltaTime * 60;
             
@@ -720,28 +656,22 @@
                 moveY += Math.sin(game.player.angle + Math.PI/2) * speed;
             }
             
-            // Sprinting
+            // Sprint
             if (game.keys['shift'] && game.player.stamina > 0) {
                 moveX *= 1.5;
                 moveY *= 1.5;
                 game.player.stamina -= deltaTime * 30;
-                game.player.stamina = Math.max(0, game.player.stamina);
             } else if (!game.keys['shift'] && game.player.stamina < 100) {
                 game.player.stamina += deltaTime * 20;
-                game.player.stamina = Math.min(100, game.player.stamina);
             }
+            game.player.stamina = Math.max(0, Math.min(100, game.player.stamina));
             
-            // Apply movement with collision detection
+            // Check collision
             if (canMoveTo(game.player.x + moveX, game.player.y)) {
                 game.player.x += moveX;
             }
             if (canMoveTo(game.player.x, game.player.y + moveY)) {
                 game.player.y += moveY;
-            }
-            
-            // Jump (simple implementation)
-            if (game.keys[' ']) {
-                // Basic jump effect
             }
         }
 
@@ -749,108 +679,43 @@
             const mapX = Math.floor(x);
             const mapY = Math.floor(y);
             
-            // Check bounds
             if (mapX < 0 || mapX >= game.map.length || 
                 mapY < 0 || mapY >= game.map[0].length) {
                 return false;
             }
             
-            // Check wall collision
-            if (game.map[mapX][mapY] === 1) {
-                return false;
-            }
-            
-            // Check enemy collision (enemies can't be walked through)
-            for (const enemy of game.enemies) {
-                if (enemy.health > 0) {
-                    const dist = Math.sqrt(
-                        Math.pow(x - enemy.x, 2) + 
-                        Math.pow(y - enemy.y, 2)
-                    );
-                    if (dist < 0.5) {
-                        return false;
-                    }
-                }
-            }
-            
-            return true;
+            return game.map[mapX][mapY] === 0;
         }
 
         function updateEnemies(deltaTime) {
             if (game.paused) return;
             
-            const currentTime = Date.now();
-            
             for (const enemy of game.enemies) {
                 if (enemy.health <= 0) continue;
                 
-                // Calculate vector to player
                 const dx = game.player.x - enemy.x;
                 const dy = game.player.y - enemy.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 
-                // Only move if player is within range
                 if (distance < 10) {
                     const angle = Math.atan2(dy, dx);
+                    enemy.x += Math.cos(angle) * enemy.speed * deltaTime * 30;
+                    enemy.y += Math.sin(angle) * enemy.speed * deltaTime * 30;
                     
-                    // Calculate new position
-                    const newX = enemy.x + Math.cos(angle) * enemy.speed * deltaTime * 60;
-                    const newY = enemy.y + Math.sin(angle) * enemy.speed * deltaTime * 60;
-                    
-                    // Check if enemy can move to new position (NO WALL CLIPPING)
-                    if (canEnemyMoveTo(enemy, newX, newY)) {
-                        enemy.x = newX;
-                        enemy.y = newY;
-                    }
-                    
-                    // Attack if close enough
+                    // Simple attack
                     if (distance < 1.5) {
-                        if (currentTime - enemy.lastAttack > 1000) { // 1 second cooldown
-                            game.player.health -= settings.enemyDamage; // USE SETTING
-                            enemy.lastAttack = currentTime;
-                            updateHUD();
-                            
-                            if (game.player.health <= 0) {
-                                gameOver();
-                            }
+                        game.player.health -= settings.enemyDamage * deltaTime;
+                        if (game.player.health <= 0) {
+                            gameOver();
                         }
+                        updateHUD();
                     }
                 }
             }
         }
 
-        function canEnemyMoveTo(enemy, x, y) {
-            const mapX = Math.floor(x);
-            const mapY = Math.floor(y);
-            
-            // Check bounds
-            if (mapX < 0 || mapX >= game.map.length || 
-                mapY < 0 || mapY >= game.map[0].length) {
-                return false;
-            }
-            
-            // Check wall collision
-            if (game.map[mapX][mapY] === 1) {
-                return false;
-            }
-            
-            // Don't let enemies get too close to each other
-            for (const otherEnemy of game.enemies) {
-                if (otherEnemy !== enemy && otherEnemy.health > 0) {
-                    const dist = Math.sqrt(
-                        Math.pow(x - otherEnemy.x, 2) + 
-                        Math.pow(y - otherEnemy.y, 2)
-                    );
-                    if (dist < 0.3) {
-                        return false;
-                    }
-                }
-            }
-            
-            return true;
-        }
-
-        function draw() {
+        // ==================== RAYCASTING ENGINE ====================
+        function raycast() {
             const ctx = game.ctx;
             const width = game.canvas.width;
             const height = game.canvas.height;
@@ -859,56 +724,26 @@
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, width, height);
             
-            // Draw floor and ceiling
-            drawFloorAndCeiling();
+            // Draw ceiling and floor
+            drawCeilingAndFloor();
             
             // Raycast walls
-            raycastWalls();
+            const fov = Math.PI / 3; // 60 degrees
+            const rayCount = width;
             
-            // Draw enemies
-            drawEnemies();
-            
-            // Draw minimap
-            drawMinimap();
-        }
-
-        function drawFloorAndCeiling() {
-            const ctx = game.ctx;
-            const height = game.canvas.height;
-            
-            // Floor (gradient)
-            for (let y = height/2; y < height; y++) {
-                const darkness = (y - height/2) / (height/2);
-                ctx.fillStyle = `rgb(${Math.floor(60 * (1 - darkness))}, 
-                                       ${Math.floor(40 * (1 - darkness))}, 
-                                       ${Math.floor(40 * (1 - darkness))})`;
-                ctx.fillRect(0, y, game.canvas.width, 1);
-            }
-            
-            // Ceiling (gradient)
-            for (let y = 0; y < height/2; y++) {
-                const darkness = 1 - (y / (height/2));
-                ctx.fillStyle = `rgb(${Math.floor(30 * darkness)}, 
-                                       ${Math.floor(20 * darkness)}, 
-                                       ${Math.floor(20 * darkness)})`;
-                ctx.fillRect(0, y, game.canvas.width, 1);
-            }
-        }
-
-        function raycastWalls() {
-            const ctx = game.ctx;
-            const width = game.canvas.width;
-            const height = game.canvas.height;
-            const FOV = Math.PI / 3;
-            
-            for (let x = 0; x < width; x++) {
-                const rayAngle = game.player.angle - FOV/2 + (x / width) * FOV;
+            for (let x = 0; x < rayCount; x++) {
+                // Calculate ray angle
+                const rayAngle = game.player.angle - fov/2 + (x / rayCount) * fov;
+                
+                // Ray direction
                 const rayDirX = Math.cos(rayAngle);
                 const rayDirY = Math.sin(rayAngle);
                 
+                // Player position in map
                 let mapX = Math.floor(game.player.x);
                 let mapY = Math.floor(game.player.y);
                 
+                // Length of ray from current position to next x or y-side
                 let deltaDistX = Math.abs(1 / rayDirX);
                 let deltaDistY = Math.abs(1 / rayDirY);
                 
@@ -917,6 +752,7 @@
                 let hit = 0;
                 let side = 0;
                 
+                // Calculate step and initial sideDist
                 if (rayDirX < 0) {
                     stepX = -1;
                     sideDistX = (game.player.x - mapX) * deltaDistX;
@@ -933,6 +769,7 @@
                     sideDistY = (mapY + 1 - game.player.y) * deltaDistY;
                 }
                 
+                // Digital Differential Analysis (DDA)
                 while (hit === 0) {
                     if (sideDistX < sideDistY) {
                         sideDistX += deltaDistX;
@@ -944,14 +781,16 @@
                         side = 1;
                     }
                     
+                    // Check if ray hit a wall
                     if (mapX >= 0 && mapX < game.map.length && 
                         mapY >= 0 && mapY < game.map[0].length) {
-                        if (game.map[mapX][mapY] > 0) hit = 1;
-                    } else {
-                        hit = 1;
+                        if (game.map[mapX][mapY] === 1) {
+                            hit = 1;
+                        }
                     }
                 }
                 
+                // Calculate distance projected on camera direction
                 let perpWallDist;
                 if (side === 0) {
                     perpWallDist = (mapX - game.player.x + (1 - stepX) / 2) / rayDirX;
@@ -959,25 +798,110 @@
                     perpWallDist = (mapY - game.player.y + (1 - stepY) / 2) / rayDirY;
                 }
                 
-                const lineHeight = Math.min(height, height / perpWallDist);
-                const drawStart = Math.max(-lineHeight/2 + height/2, 0);
-                const drawEnd = Math.min(lineHeight/2 + height/2, height);
+                // Calculate height of line to draw on screen
+                const lineHeight = Math.floor(height / perpWallDist);
                 
+                // Calculate lowest and highest pixel to fill
+                let drawStart = -lineHeight / 2 + height / 2;
+                if (drawStart < 0) drawStart = 0;
+                let drawEnd = lineHeight / 2 + height / 2;
+                if (drawEnd >= height) drawEnd = height - 1;
+                
+                // Choose wall color
                 let color;
                 if (game.map[mapX][mapY] === 1) {
-                    color = side === 0 ? '#8b4513' : '#a0522d';
-                } else {
-                    color = '#666';
+                    color = side === 0 ? '#8b4513' : '#a0522d'; // Different colors for different sides
                 }
                 
-                const darkness = Math.min(0.8, perpWallDist / 15);
+                // Add shading based on distance
+                const darkness = Math.min(1, perpWallDist / 15);
                 const rgb = hexToRgb(color);
-                const darkened = `rgb(${Math.floor(rgb.r * (1 - darkness))}, 
-                                        ${Math.floor(rgb.g * (1 - darkness))}, 
-                                        ${Math.floor(rgb.b * (1 - darkness))})`;
+                const shadedColor = `rgb(${Math.floor(rgb.r * (1 - darkness))}, 
+                                          ${Math.floor(rgb.g * (1 - darkness))}, 
+                                          ${Math.floor(rgb.b * (1 - darkness))})`;
                 
-                ctx.fillStyle = darkened;
+                // Draw the wall slice
+                ctx.fillStyle = shadedColor;
                 ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+                
+                // Draw floor and ceiling for this column
+                drawFloorAndCeilingColumn(x, drawEnd, perpWallDist, rayDirX, rayDirY);
+            }
+            
+            // Draw enemies
+            drawEnemies();
+            
+            // Draw minimap
+            drawMinimap();
+        }
+
+        function drawCeilingAndFloor() {
+            const ctx = game.ctx;
+            const height = game.canvas.height;
+            
+            // Draw ceiling (darker at top)
+            for (let y = 0; y < height/2; y++) {
+                const darkness = 1 - (y / (height/2));
+                ctx.fillStyle = `rgb(${Math.floor(20 * darkness)}, 
+                                       ${Math.floor(15 * darkness)}, 
+                                       ${Math.floor(15 * darkness)})`;
+                ctx.fillRect(0, y, game.canvas.width, 1);
+            }
+            
+            // Draw floor (darker at bottom)
+            for (let y = height/2; y < height; y++) {
+                const darkness = (y - height/2) / (height/2);
+                ctx.fillStyle = `rgb(${Math.floor(50 * (1 - darkness))}, 
+                                       ${Math.floor(30 * (1 - darkness))}, 
+                                       ${Math.floor(30 * (1 - darkness))})`;
+                ctx.fillRect(0, y, game.canvas.width, 1);
+            }
+        }
+
+        function drawFloorAndCeilingColumn(x, wallBottom, perpWallDist, rayDirX, rayDirY) {
+            const ctx = game.ctx;
+            const height = game.canvas.height;
+            const player = game.player;
+            
+            // Draw floor from wall bottom to screen bottom
+            for (let y = wallBottom; y < height; y++) {
+                // Current distance
+                const currentDist = height / (2.0 * y - height);
+                
+                // Weight
+                const weight = currentDist / perpWallDist;
+                
+                // Current floor position
+                const currentFloorX = weight * (player.x + rayDirX * perpWallDist) + (1.0 - weight) * player.x;
+                const currentFloorY = weight * (player.y + rayDirY * perpWallDist) + (1.0 - weight) * player.y;
+                
+                // Texture coordinates
+                const floorTexX = Math.floor(currentFloorX * 32) % 32;
+                const floorTexY = Math.floor(currentFloorY * 32) % 32;
+                
+                // Floor pattern
+                const pattern = (floorTexX + floorTexY) % 2;
+                const floorDarkness = Math.min(0.7, currentDist / 20);
+                
+                if (pattern === 0) {
+                    ctx.fillStyle = `rgba(60, 40, 40, ${1 - floorDarkness})`;
+                } else {
+                    ctx.fillStyle = `rgba(80, 50, 50, ${1 - floorDarkness})`;
+                }
+                
+                ctx.fillRect(x, y, 1, 1);
+                
+                // Draw ceiling (mirror of floor)
+                const ceilingY = height - y;
+                const ceilingDarkness = Math.min(0.5, currentDist / 30);
+                
+                if (pattern === 0) {
+                    ctx.fillStyle = `rgba(30, 20, 20, ${1 - ceilingDarkness})`;
+                } else {
+                    ctx.fillStyle = `rgba(40, 25, 25, ${1 - ceilingDarkness})`;
+                }
+                
+                ctx.fillRect(x, ceilingY, 1, 1);
             }
         }
 
@@ -985,9 +909,9 @@
             const ctx = game.ctx;
             const width = game.canvas.width;
             const height = game.canvas.height;
-            const FOV = Math.PI / 3;
+            const fov = Math.PI / 3;
             
-            // Sort enemies by distance for proper rendering
+            // Sort enemies by distance (painter's algorithm)
             const sortedEnemies = game.enemies
                 .filter(enemy => enemy.health > 0)
                 .map(enemy => {
@@ -995,7 +919,7 @@
                     const dy = enemy.y - game.player.y;
                     return {
                         ...enemy,
-                        distance: Math.sqrt(dx * dx + dy * dy)
+                        distance: dx * dx + dy * dy
                     };
                 })
                 .sort((a, b) => b.distance - a.distance);
@@ -1003,22 +927,26 @@
             for (const enemy of sortedEnemies) {
                 const dx = enemy.x - game.player.x;
                 const dy = enemy.y - game.player.y;
-                const distance = enemy.distance;
+                const distance = Math.sqrt(enemy.distance);
                 
+                // Calculate angle to enemy
                 const enemyAngle = Math.atan2(dy, dx) - game.player.angle;
                 
                 // Normalize angle
-                let normalizedAngle = enemyAngle;
-                while (normalizedAngle > Math.PI) normalizedAngle -= Math.PI * 2;
-                while (normalizedAngle < -Math.PI) normalizedAngle += Math.PI * 2;
+                let angleDiff = enemyAngle;
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
                 
                 // Check if enemy is in FOV
-                if (Math.abs(normalizedAngle) < FOV/2 && distance < 15) {
-                    const screenX = (normalizedAngle + FOV/2) / FOV * width;
-                    const size = Math.max(30, 150 / distance);
+                if (Math.abs(angleDiff) < fov/2 && distance < 15) {
+                    // Calculate screen position
+                    const screenX = (angleDiff + fov/2) / fov * width;
                     
-                    // Draw enemy body
-                    ctx.fillStyle = '#8b0000';
+                    // Calculate size based on distance
+                    const size = Math.max(30, 200 / distance);
+                    
+                    // Draw enemy
+                    ctx.fillStyle = enemy.health > 50 ? '#8b0000' : '#660000';
                     ctx.fillRect(screenX - size/2, height/2 - size/2, size, size);
                     
                     // Draw enemy face
@@ -1148,10 +1076,10 @@
             const deltaTime = (currentTime - game.lastTime) / 1000;
             game.lastTime = currentTime;
             
-            if (game.running) {
+            if (game.running && !game.paused) {
                 updatePlayer(deltaTime);
                 updateEnemies(deltaTime);
-                draw();
+                raycast(); // Use raycasting instead of old draw function
                 updateHUD();
             }
             
